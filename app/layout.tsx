@@ -1,25 +1,25 @@
-"use client"
-import { Provider as ChakraUIProvider } from "@/components/ui/provider"
-import { Provider as ReduxStoreProvider } from 'react-redux'
+'use client';
+import React from 'react';
+import { Provider as ReduxStoreProvider } from 'react-redux';
 
-import "./globals.css";
-import store from "@/store";
-
+import { Provider as ChakraProvider } from '@/components/ui/provider';
+import './globals.css';
+import store from '@/store';
 
 export default function RootLayout({
-  children,
+    children,
 }: Readonly<{
   children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en" suppressHydrationWarning>
-      <body>
-        <ReduxStoreProvider store={store}>
-          <ChakraUIProvider>
-            {children}
-          </ChakraUIProvider>
-        </ReduxStoreProvider>
-      </body>
-    </html>
-  );
+}>): React.ReactElement {
+    return (
+        <html lang='en' suppressHydrationWarning>
+            <body>
+                <ReduxStoreProvider store={store}>
+                    <ChakraProvider>
+                        {children}
+                    </ChakraProvider>
+                </ReduxStoreProvider>
+            </body>
+        </html>
+    );
 }

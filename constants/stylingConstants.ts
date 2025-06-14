@@ -1,0 +1,3 @@
+
+export const MINIMUM_WIDTH = 375;
+export const MINIMUM_CONTENT_WIDTH = MINIMUM_WIDTH * 0.7;

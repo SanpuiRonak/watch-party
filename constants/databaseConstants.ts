@@ -1,6 +1,9 @@
-export const DATABASE_NAME = 'watch-party-db';
-export const USER_STORE = 'userStore';
 
-export const DATABASE_STORES = [
-    USER_STORE
-]
+export const DATABASE_NAME = 'watch-party-db';
+export const DATABASE_STORE = 'watch-party-db-store';
+
+
+export enum DATABASE_KEYS {
+    USER_DATA = 'userData',
+    ROOM_DATA = 'roomData',
+}
