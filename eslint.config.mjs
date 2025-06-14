@@ -14,6 +14,9 @@ const compat = new FlatCompat({
 
 const eslintConfig = [
     js.configs.recommended,
+    {
+        ignores: ['.next/**/*', '**/*.mjs', '**/*.mts', '.*', '.*/**',]
+    },
     ...compat.extends(
         'eslint:recommended',
         'plugin:react/recommended',
@@ -28,9 +31,12 @@ const eslintConfig = [
     ),
     {
         languageOptions: {
+            parser: await import('@typescript-eslint/parser'),
             parserOptions: {
                 project: './tsconfig.json',
                 tsconfigRootDir: __dirname,
+                ecmaVersion: 'latest',
+                sourceType: 'module',
             },
         },
     },
