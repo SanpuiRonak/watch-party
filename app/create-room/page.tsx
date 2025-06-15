@@ -2,14 +2,17 @@
 import { Heading, Input, Button, Field, Center, VStack, Flex, Box } from '@chakra-ui/react';
 import { useRouter } from 'next/navigation';
 import React, { useState, useCallback } from 'react';
-import { AiOutlineCloseCircle , AiOutlineVideoCameraAdd } from 'react-icons/ai';
+import { AiOutlineCloseCircle, AiOutlineVideoCameraAdd } from 'react-icons/ai';
 
-import withAuth from '@/components/Authenticator';
+import withAuth, { WithUserProp } from '@/components/Authenticator';
 import ReturnButton from '@/components/ReturnButton';
 import { MINIMUM_CONTENT_WIDTH } from '@/constants/stylingConstants';
 import { useGetRoomsQuery, useSaveRoomMutation } from '@/features/roomSlice';
+import { RoomMetaData } from '@/interfaces/models';
 
-const CreateRoomPage = (): React.ReactElement => {
+interface CreateRoomPageProps extends WithUserProp { }
+
+const CreateRoomPage = (props: CreateRoomPageProps): React.ReactElement => {
     const router = useRouter();
     const [roomName, setRoomName] = useState('');
     const [streamLink, setStreamLink] = useState('');
@@ -38,18 +41,19 @@ const CreateRoomPage = (): React.ReactElement => {
             return;
         }
 
-        const room = {
-            name: roomName, 
+        const room: RoomMetaData = {
+            name: roomName,
             streamLink,
             uuid: crypto.randomUUID(),
+            ownerId: props.user.uuid,
         };
-        
+
         await saveRoom(room);
 
         await rooms.refetch();
 
         router.push(`room/${room.uuid}`);
-    }, [roomName, streamLink, saveRoom, rooms, router]);
+    }, [roomName, streamLink, saveRoom, rooms, router, props.user.uuid]);
 
     return (
         <VStack minH='100vh'>

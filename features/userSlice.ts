@@ -2,7 +2,7 @@ import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
 import { DATABASE_KEYS } from '@/constants/databaseConstants';
 import { getDataFromDB, upsertDataInDB } from '@/database';
-import { User } from '@/interface';
+import { User } from '@/interfaces/models';
 
 export const userSlice = createApi({
     reducerPath: 'userApi',

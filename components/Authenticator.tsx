@@ -3,11 +3,14 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useEffect, FunctionComponent, JSX } from 'react';
 
 import { useGetUserQuery } from '@/features/userSlice';
+import { User } from '@/interfaces/models';
 
 import Spinner from './Spinner';
 
-export default function withAuth<T extends JSX.IntrinsicAttributes>(Component: FunctionComponent<T>): FunctionComponent<T> {
-    return function WithAuth(props: T): React.ReactElement {
+export type WithUserProp = { user: User }
+
+export default function withAuth<T extends JSX.IntrinsicAttributes>(Component: FunctionComponent<T & WithUserProp>): FunctionComponent<T> {
+    return function WithAuth(props: T): React.ReactElement | null {
         const user = useGetUserQuery();
         const pathname = usePathname();
         const router = useRouter();
@@ -15,7 +18,7 @@ export default function withAuth<T extends JSX.IntrinsicAttributes>(Component: F
 
         useEffect(() => {
             if (!user.isFetching && !user.data) {
-                const redirectTo = searchParams?.get('redirectTo') ?? '';
+                const redirectTo = pathname ?? '/';
                 if (pathname !== '/profile' ) {
                     if(redirectTo === '') router.replace('/profile');
                     else router.replace(`/profile?redirectTo=${encodeURIComponent(redirectTo)}`);
@@ -23,6 +26,9 @@ export default function withAuth<T extends JSX.IntrinsicAttributes>(Component: F
             }
         }, [pathname, router, searchParams, user.data, user.isFetching]);
 
-        return (user.isFetching) ? <Spinner /> : <Component {...props} />;
+        if (user.isFetching) return <Spinner />;
+        if (!user.data) return null;
+
+        return <Component {...props} user={user.data} />;
     };
 }
