@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { UserSetup } from '@/components/user/UserSetup';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useUser } from '@/hooks/useUser';
 import { Users, Plus } from 'lucide-react';
 
@@ -51,6 +52,10 @@ export default function Home() {
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-background">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <div className="text-center space-y-8">
         <div>
           <h1 className="text-4xl font-bold mb-4">Watch Party</h1>

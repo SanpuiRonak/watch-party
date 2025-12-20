@@ -6,6 +6,7 @@ import { VideoPlayer } from '@/components/room/VideoPlayer';
 import { RoomControls } from '@/components/room/RoomControls';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
 import { UserSetup } from '@/components/user/UserSetup';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
 import { useAppSelector } from '@/lib/store';
@@ -135,6 +136,7 @@ export default function RoomPage({ params }: RoomPageProps) {
           </div>
           
           <div className="flex items-center space-x-2">
+            <ThemeToggle />
             <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
             <span className="text-sm text-muted-foreground">
               {isConnected ? 'Connected' : 'Disconnected'}
