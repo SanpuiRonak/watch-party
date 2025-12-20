@@ -5,7 +5,7 @@ import { Socket } from 'socket.io-client';
 import { socketManager } from '@/lib/socket';
 import { useAppDispatch } from '@/lib/store';
 import { setRoom, updateVideoState, setConnected } from '@/lib/store/slices/roomSlice';
-import { Room, VideoState } from '@/lib/types';
+import { Room, VideoState, RoomPermissions } from '@/lib/types';
 
 export const useSocket = (roomId: string, userId: string) => {
   const dispatch = useAppDispatch();
@@ -26,6 +26,11 @@ export const useSocket = (roomId: string, userId: string) => {
       dispatch(updateVideoState(videoState));
     });
 
+    socket.on('permissions-updated', (permissions: RoomPermissions) => {
+      // Refresh room state when permissions change
+      socket.emit('join-room', roomId, userId);
+    });
+
     socket.on('error', (message: string) => {
       console.error('Socket error:', message);
       dispatch(setConnected(false));
@@ -42,6 +47,7 @@ export const useSocket = (roomId: string, userId: string) => {
     return () => {
       socket.off('room-state');
       socket.off('video-sync');
+      socket.off('permissions-updated');
       socket.off('error');
       socket.off('connect');
       socket.off('disconnect');

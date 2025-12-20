@@ -1,18 +1,21 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
-import { Play, Pause, SkipBack, SkipForward, Settings } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward } from 'lucide-react';
 import { useAppSelector } from '@/lib/store';
 import { getCurrentTime } from '@/lib/utils/videoSync';
+import { PermissionsPanel } from './PermissionsPanel';
+import { RoomPermissions } from '@/lib/types';
 
 interface RoomControlsProps {
   onVideoEvent: (eventType: 'play' | 'pause' | 'seek', currentTime: number) => void;
+  onUpdatePermissions: (permissions: RoomPermissions) => void;
   canPlay: boolean;
   canSeek: boolean;
   isOwner: boolean;
 }
 
-export function RoomControls({ onVideoEvent, canPlay, canSeek, isOwner }: RoomControlsProps) {
+export function RoomControls({ onVideoEvent, onUpdatePermissions, canPlay, canSeek, isOwner }: RoomControlsProps) {
   const serverVideoState = useAppSelector(state => state.room.serverVideoState);
   const currentTime = serverVideoState ? getCurrentTime(serverVideoState) : 0;
   const isPlaying = serverVideoState?.isPlaying || false;
@@ -26,6 +29,10 @@ export function RoomControls({ onVideoEvent, canPlay, canSeek, isOwner }: RoomCo
     if (!canSeek) return;
     const newTime = Math.max(0, currentTime + seconds);
     onVideoEvent('seek', newTime);
+  };
+
+  const handleUpdatePermissions = (permissions: RoomPermissions) => {
+    onUpdatePermissions(permissions);
   };
 
   return (
@@ -72,10 +79,7 @@ export function RoomControls({ onVideoEvent, canPlay, canSeek, isOwner }: RoomCo
         </span>
         
         {isOwner && (
-          <Button variant="outline" size="sm">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
-          </Button>
+          <PermissionsPanel onUpdatePermissions={handleUpdatePermissions} />
         )}
       </div>
     </div>

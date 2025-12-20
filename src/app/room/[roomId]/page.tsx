@@ -11,6 +11,7 @@ import { useUser } from '@/hooks/useUser';
 import { useAppSelector } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Check } from 'lucide-react';
+import { RoomPermissions } from '@/lib/types';
 
 interface RoomPageProps {
   params: Promise<{ roomId: string }>;
@@ -82,6 +83,24 @@ export default function RoomPage({ params }: RoomPageProps) {
     );
   }
 
+  const handleUpdatePermissions = async (permissions: RoomPermissions) => {
+    if (!user || !room) return;
+    
+    try {
+      const response = await fetch(`/api/rooms/${roomId}/permissions`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ permissions, ownerId: user.id }),
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to update permissions');
+      }
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+    }
+  };
+
   const isOwner = user.id === room.ownerId;
   const canPlay = room.permissions.canPlay;
   const canSeek = room.permissions.canSeek;
@@ -135,6 +154,7 @@ export default function RoomPage({ params }: RoomPageProps) {
             
             <RoomControls
               onVideoEvent={emitVideoEvent}
+              onUpdatePermissions={handleUpdatePermissions}
               canPlay={canPlay}
               canSeek={canSeek}
               isOwner={isOwner}
