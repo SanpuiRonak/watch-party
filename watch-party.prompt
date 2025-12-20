@@ -1,0 +1,79 @@
+Plan the architecture for the following
+
+Use the following techstack
+
+Next.js in typescript
+ShaduiCDN
+Standard library of loaders/Icons assets for react  
+
+redux toolkit
+
+
+To design a web application that does the follwing
+
+
+
+1. When app opens up present with 2 options
+
+
+A. Create room
+
+If user is not created
+
+Ask for the confirmation on the profile picture/random generated user name
+evaluate which storage to use
+Create and store an uuid in the local storage
+Store the user name/photo locally
+
+`
+on user creation`
+
+
+ask for an https stream able link. Can we verify the streamabily of the https link here?
+
+
+on the server create an uuid for the watch party session and redirect the user to the correct room url. Make him the room owner.
+presist the room sessions details for 24 hours
+
+
+
+
+
+
+
+B. Joins room
+
+If user is not created
+
+Ask for the confirmation on the profile picture/random generated user name
+evaluate which storage to use
+Create and store an uuid in the local storage
+Store the user name/photo locally
+
+
+If the room exsists
+
+
+
+redirect the user to the room as if it exsits else show 404 page
+
+
+The room owner can 
+
+a. pause/play
+b. seek
+c. update room permissions
+
+
+The viewers can by default
+
+a. pause/play
+b. seek
+
+but these permissions can be modified by the owner.
+
+
+Make sure implement a system ensure that the media for all veiwers and owner are playing in sync 
+
+
+
