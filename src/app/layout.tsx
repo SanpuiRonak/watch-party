@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <ThemeProvider
-          defaultTheme="system"
+          defaultTheme="dark"
         >
           <ReduxProvider>
             {children}

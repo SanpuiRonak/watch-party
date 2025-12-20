@@ -25,7 +25,7 @@ export default function CreateRoom() {
     setIsValidating(true);
     setError('');
 
-    const isValid = await validateStreamUrl(streamUrl);
+    const { isValid, finalUrl } = await validateStreamUrl(streamUrl);
     setIsValidating(false);
 
     if (!isValid) {
@@ -40,7 +40,7 @@ export default function CreateRoom() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          streamUrl,
+          streamUrl: finalUrl || streamUrl, // Use final URL if available
           ownerId: user?.id,
         }),
       });
