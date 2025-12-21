@@ -5,8 +5,8 @@ networks:
 services:
   app:
     build: .
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"
     environment:
       - NODE_ENV=production
       - MONGODB_URI=mongodb://mongodb:27017
