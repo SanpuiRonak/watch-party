@@ -68,7 +68,7 @@ export default function RoomPage({ params }: RoomPageProps) {
                 createdAt: roomData.createdAt,
                 accessedAt: Date.now(),
                 ownerId: roomData.ownerId,
-                ownerName: 'Unknown'
+                ownerName: roomData.ownerName || 'Unknown'
               };
               
               const existingRecent = JSON.parse(localStorage.getItem(`recentRooms_${user.id}`) || '[]');

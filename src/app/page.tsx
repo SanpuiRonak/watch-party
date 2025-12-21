@@ -73,37 +73,13 @@ export default function Home() {
       const storedMyRooms = localStorage.getItem(`myRooms_${user.id}`);
       const storedRecentRooms = localStorage.getItem(`recentRooms_${user.id}`);
       
-      // Always show mock data for testing - remove 'if (storedMyRooms)' condition
-      // Mock data for My Rooms with edge cases
-      const baseTime = 1700000000000; // Fixed timestamp
-      const mockMyRooms = Array.from({ length: 1000 }, (_, i) => ({
-        id: `my-room-${i + 1}`,
-        name: i % 10 === 0 ? `Super Long Room Name That Should Be Truncated ${i + 1}` :
-              i % 15 === 0 ? `X${i + 1}` :
-              `Room ${i + 1}`,
-        streamUrl: `https://example.com/stream-${i + 1}.mp4`,
-        createdAt: baseTime - (i * 3600000), // Each room 1 hour older
-        ownerId: user.id,
-        ownerName: user.username
-      }));
-      setMyRooms(mockMyRooms);
+      if (storedMyRooms) {
+        setMyRooms(JSON.parse(storedMyRooms));
+      }
       
-      // Always show mock data for testing - remove 'if (storedRecentRooms)' condition  
-      // Mock data for Recent Rooms with edge cases
-      const mockRecentRooms = Array.from({ length: 1000 }, (_, i) => ({
-        id: `recent-room-${i + 1}`,
-        name: i % 8 === 0 ? `Gaming Stream Marathon Session ${i + 1}` :
-              i % 12 === 0 ? `Y${i + 1}` :
-              `Recent Room ${i + 1}`,
-        streamUrl: `https://example.com/recent-${i + 1}.mp4`,
-        createdAt: baseTime - ((i + 10) * 86400000), // Created days ago
-        accessedAt: baseTime - (i * 1800000), // Each room 30 min older access
-        ownerId: `user-${i % 20}`,
-        ownerName: i % 7 === 0 ? `VeryLongUsername${i + 1}` :
-                  i % 11 === 0 ? `U${i + 1}` :
-                  `User${i + 1}`
-      }));
-      setRecentRooms(mockRecentRooms);
+      if (storedRecentRooms) {
+        setRecentRooms(JSON.parse(storedRecentRooms));
+      }
     }
   }, [isAuthenticated, user]);
 
@@ -260,9 +236,12 @@ export default function Home() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground py-4">
-                      No rooms created yet
-                    </p>
+                    <div className="flex flex-col items-center justify-center h-32 gap-3">
+                      <User className="h-12 w-12 text-muted-foreground/30" />
+                      <p className="text-base text-muted-foreground text-center">
+                        Looks like you have not created any rooms yet. Please use <Button onClick={handleCreateRoom} size="sm" className="mx-1"><Plus className="h-4 w-4 mr-1" />Create Room</Button> to create a new room!
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -306,8 +285,8 @@ export default function Home() {
                         <div className="flex flex-col h-full pr-12">
                           <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
                           <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
-                            <UserAvatar username={room.ownerName} size="sm" />
-                            <span className="truncate">{room.ownerName}</span>
+                            <UserAvatar username={room.ownerName || 'Unknown'} size="sm" />
+                            <span className="truncate">{room.ownerName || 'Unknown'}</span>
                             <span className="flex-shrink-0">•</span>
                             <span 
                               className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
@@ -327,9 +306,12 @@ export default function Home() {
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground py-4">
-                    No recent rooms
-                  </p>
+                  <div className="flex flex-col items-center justify-center h-32 gap-3">
+                    <Clock className="h-12 w-12 text-muted-foreground/30" />
+                    <p className="text-base text-muted-foreground text-center">
+                      Looks like you haven't joined any rooms recently. Ask your friends for the room link to join their rooms!
+                    </p>
+                  </div>
                 )}
                 </div>
               </>
