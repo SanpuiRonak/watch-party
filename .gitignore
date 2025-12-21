@@ -94,3 +94,7 @@ temp/
 *.prompt
 redis-data/
 mongo-data/
+
+# Build artifacts
+socket-server.js
+src/**/*.js
