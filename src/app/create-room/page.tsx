@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { UserGuard } from '@/components/auth/UserGuard';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
@@ -77,7 +78,8 @@ export default function CreateRoom() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background p-4">
+    <UserGuard>
+      <main className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
@@ -133,5 +135,6 @@ export default function CreateRoom() {
         </div>
       </div>
     </main>
+    </UserGuard>
   );
 }

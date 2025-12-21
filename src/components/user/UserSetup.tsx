@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -14,6 +15,7 @@ interface UserSetupProps {
 }
 
 export function UserSetup({ open, onComplete }: UserSetupProps) {
+  const router = useRouter();
   const [username, setUsername] = useState(generateUsername());
 
   const handleRegenerateUsername = () => {
@@ -23,6 +25,7 @@ export function UserSetup({ open, onComplete }: UserSetupProps) {
   const handleConfirm = () => {
     const trimmedUsername = username.trim().slice(0, 50);
     onComplete(trimmedUsername);
+    router.push('/');
   };
 
   return (
@@ -32,9 +35,10 @@ export function UserSetup({ open, onComplete }: UserSetupProps) {
           <DialogTitle>Create Your Profile</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center space-y-4">
-          <UserAvatar username={username} size="lg" />
-          
-          <div className="flex w-full space-x-2">
+          <div className="flex w-full space-x-2 items-center">
+            <div className="flex-shrink-0">
+              <UserAvatar username={username} size="lg" />
+            </div>
             <Input
               value={username}
               onChange={(e) => setUsername(e.target.value.slice(0, 50))}

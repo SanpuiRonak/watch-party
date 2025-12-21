@@ -7,6 +7,7 @@ import { RoomControls } from '@/components/room/RoomControls';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
 import { UserSetup } from '@/components/user/UserSetup';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { UserGuard } from '@/components/auth/UserGuard';
 import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
 import { useAppSelector, useAppDispatch } from '@/lib/store';
@@ -134,68 +135,70 @@ export default function RoomPage({ params }: RoomPageProps) {
   const canSeek = room.permissions.canSeek;
 
   return (
-    <div className="min-h-screen bg-background p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">Watch Party</h1>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-muted-foreground">Room: {roomId}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={copyRoomId}
-                  className="h-6 px-2"
-                >
-                  {copied ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </Button>
+    <UserGuard>
+      <div className="min-h-screen bg-background p-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">Watch Party</h1>
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-muted-foreground">Room: {roomId}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={copyRoomId}
+                    className="h-6 px-2"
+                  >
+                    {copied ? (
+                      <Check className="h-3 w-3" />
+                    ) : (
+                      <Copy className="h-3 w-3" />
+                    )}
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <ThemeToggle />
-            <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-            <span className="text-sm text-muted-foreground">
-              {isConnected ? 'Connected' : 'Disconnected'}
-            </span>
-          </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Video Player */}
-          <div className="lg:col-span-3 space-y-4">
-            <VideoPlayer
-              streamUrl={room.streamUrl}
-              onVideoEvent={emitVideoEvent}
-              canControl={canPlay || canSeek}
-            />
             
-            <RoomControls
-              onVideoEvent={emitVideoEvent}
-              onUpdatePermissions={handleUpdatePermissions}
-              canPlay={canPlay}
-              canSeek={canSeek}
-              isOwner={isOwner}
-            />
+            <div className="flex items-center space-x-2">
+              <ThemeToggle />
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+              <span className="text-sm text-muted-foreground">
+                {isConnected ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
           </div>
 
-          {/* Sidebar */}
-          <div className="space-y-4">
-            <ParticipantsList />
+          {/* Main Content */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Video Player */}
+            <div className="lg:col-span-3 space-y-4">
+              <VideoPlayer
+                streamUrl={room.streamUrl}
+                onVideoEvent={emitVideoEvent}
+                canControl={canPlay || canSeek}
+              />
+              
+              <RoomControls
+                onVideoEvent={emitVideoEvent}
+                onUpdatePermissions={handleUpdatePermissions}
+                canPlay={canPlay}
+                canSeek={canSeek}
+                isOwner={isOwner}
+              />
+            </div>
+
+            {/* Sidebar */}
+            <div className="space-y-4">
+              <ParticipantsList />
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </UserGuard>
   );
 }

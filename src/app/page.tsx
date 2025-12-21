@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSetup } from '@/components/user/UserSetup';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { UserAvatar } from '@/components/ui/user-avatar';
+import { UserGuard } from '@/components/auth/UserGuard';
 import { useUser } from '@/hooks/useUser';
 import { Users, Plus, Clock, User, Share, X } from 'lucide-react';
 
@@ -74,13 +75,14 @@ export default function Home() {
       
       // Always show mock data for testing - remove 'if (storedMyRooms)' condition
       // Mock data for My Rooms with edge cases
+      const baseTime = 1700000000000; // Fixed timestamp
       const mockMyRooms = Array.from({ length: 1000 }, (_, i) => ({
         id: `my-room-${i + 1}`,
         name: i % 10 === 0 ? `Super Long Room Name That Should Be Truncated ${i + 1}` :
               i % 15 === 0 ? `X${i + 1}` :
               `Room ${i + 1}`,
         streamUrl: `https://example.com/stream-${i + 1}.mp4`,
-        createdAt: Date.now() - (i * 3600000), // Each room 1 hour older
+        createdAt: baseTime - (i * 3600000), // Each room 1 hour older
         ownerId: user.id,
         ownerName: user.username
       }));
@@ -94,8 +96,8 @@ export default function Home() {
               i % 12 === 0 ? `Y${i + 1}` :
               `Recent Room ${i + 1}`,
         streamUrl: `https://example.com/recent-${i + 1}.mp4`,
-        createdAt: Date.now() - ((i + 10) * 86400000), // Created days ago
-        accessedAt: Date.now() - (i * 1800000), // Each room 30 min older access
+        createdAt: baseTime - ((i + 10) * 86400000), // Created days ago
+        accessedAt: baseTime - (i * 1800000), // Each room 30 min older access
         ownerId: `user-${i % 20}`,
         ownerName: i % 7 === 0 ? `VeryLongUsername${i + 1}` :
                   i % 11 === 0 ? `U${i + 1}` :
@@ -110,7 +112,8 @@ export default function Home() {
   };
 
   const getTimeAgo = (timestamp: number) => {
-    const now = Date.now();
+    // TODO: Fix hydration issue - use dynamic time calculation after hydration
+    const now = 1700000000000; // Fixed timestamp for SSR consistency
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);
     const hours = Math.floor(diff / 3600000);
@@ -149,179 +152,196 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-6">
-        <div className="flex items-center gap-2">
-          <span className="text-3xl">🎉</span>
-          <h1 className="text-4xl font-bold">Watch Party</h1>
-        </div>
-        <div className="flex items-center gap-4">
-          {isAuthenticated && user && (
-            <p className="text-sm text-muted-foreground">
-              Welcome back, {user.username}!
-            </p>
-          )}
-          <div className="flex gap-2">
-            <Button onClick={handleCreateRoom} size="sm" className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Create Room
-            </Button>
-            
-            <Button onClick={handleJoinRoom} variant="outline" size="sm" className="flex items-center gap-2">
-              <Users className="h-4 w-4" />
-              Join Room
-            </Button>
-          </div>
-          <ThemeToggle />
-        </div>
-      </div>
-      
-      <div className="flex-1 flex flex-col justify-end px-6 pb-6">
-        {/* Room Sections */}
-        {isAuthenticated && (
-          <div className="space-y-6">
-            {/* My Rooms */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <User className="h-5 w-5" />
-                <h2 className="text-xl font-semibold">Rooms Created by Me</h2>
-              </div>
-              {myRooms.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  {myRooms.map((room) => (
-                    <div key={room.id} className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteRoom(room.id, true);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="absolute bottom-2 right-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          shareRoom(room.id);
-                        }}
-                      >
-                        <Share className="h-3 w-3" />
-                      </Button>
-                      {copiedRoomId === room.id && (
-                        <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
-                          Link copied!
-                        </div>
-                      )}
-                      <div className="flex flex-col h-full pr-12">
-                        <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
-                        <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
-                          <UserAvatar username={room.ownerName} size="sm" />
-                          <span className="truncate">{room.ownerName}</span>
-                          <span className="flex-shrink-0">•</span>
-                          <span 
-                            className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleTimeFormat(room.id);
-                            }}
-                          >
-                            {showAbsoluteTime[room.id] 
-                              ? `Created on ${formatDate(room.createdAt)}`
-                              : `Created ${getTimeAgo(room.createdAt)}`
-                            }
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground py-4">
-                  No rooms created yet
+    <UserGuard>
+      <main className="min-h-screen bg-background">
+        {/* Header - Top 50% */}
+        <div className="h-[50vh] flex flex-col justify-between px-6 py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-3xl">🎉</span>
+              <h1 className="text-4xl font-bold">Watch Party</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              {isAuthenticated && user && (
+                <p className="text-sm text-muted-foreground">
+                  Welcome back, {user.username}!
                 </p>
               )}
+              <div className="flex gap-2">
+                <Button onClick={handleCreateRoom} size="sm" className="flex items-center gap-2">
+                  <Plus className="h-4 w-4" />
+                  Create Room
+                </Button>
+                
+                <Button onClick={handleJoinRoom} variant="outline" size="sm" className="flex items-center gap-2">
+                  <Users className="h-4 w-4" />
+                  Join Room
+                </Button>
+              </div>
+              <ThemeToggle />
             </div>
+          </div>
+          <div className="flex-1 flex items-center justify-center text-center">
+            <div>
+              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with friends around the world!</h2>
+              <div className="text-lg text-muted-foreground space-y-2">
+                <p>Use <Button onClick={handleCreateRoom} size="sm" className="mx-1"><Plus className="h-4 w-4 mr-1" />Create Room</Button> to start watching together with your friends</p>
+                <p className="text-center font-medium">OR</p>
+                <p>Directly open the link shared by your friends or use the <Button onClick={handleJoinRoom} variant="outline" size="sm" className="mx-1"><Users className="h-4 w-4 mr-1" />Join Room</Button> button to join existing rooms!</p>
+              </div>
+            </div>
+          </div>
+          <div></div>
+        </div>
+        
+        {/* Room Sections - Aligned to bottom */}
+        <div className="h-[50vh] flex flex-col justify-center px-6">
+          <div className="flex flex-col justify-evenly h-full py-6">
+            {isAuthenticated && (
+              <>
+                {/* My Rooms */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <User className="h-5 w-5" />
+                    <h2 className="text-xl font-semibold">Rooms Created by Me</h2>
+                  </div>
+                  {myRooms.length > 0 ? (
+                    <div className="flex gap-4 overflow-x-auto pb-2">
+                      {myRooms.map((room) => (
+                        <div key={room.id} className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteRoom(room.id, true);
+                            }}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="absolute bottom-2 right-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              shareRoom(room.id);
+                            }}
+                          >
+                            <Share className="h-3 w-3" />
+                          </Button>
+                          {copiedRoomId === room.id && (
+                            <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
+                              Link copied!
+                            </div>
+                          )}
+                          <div className="flex flex-col h-full pr-12">
+                            <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
+                            <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
+                              <UserAvatar username={room.ownerName} size="sm" />
+                              <span className="truncate">{room.ownerName}</span>
+                              <span className="flex-shrink-0">•</span>
+                              <span 
+                                className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleTimeFormat(room.id);
+                                }}
+                              >
+                                {showAbsoluteTime[room.id] 
+                                  ? `Created on ${formatDate(room.createdAt)}`
+                                  : `Created ${getTimeAgo(room.createdAt)}`
+                                }
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground py-4">
+                      No rooms created yet
+                    </p>
+                  )}
+                </div>
 
-            {/* Recent Rooms */}
-            <div>
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="h-5 w-5" />
-                <h2 className="text-xl font-semibold">Recent Rooms</h2>
-              </div>
-              {recentRooms.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-2">
-                  {recentRooms.slice(0, 1000).map((room) => (
-                    <div key={room.id} className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          deleteRoom(room.id, false);
-                        }}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="absolute bottom-2 right-2"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          shareRoom(room.id);
-                        }}
-                      >
-                        <Share className="h-3 w-3" />
-                      </Button>
-                      {copiedRoomId === room.id && (
-                        <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
-                          Link copied!
-                        </div>
-                      )}
-                      <div className="flex flex-col h-full pr-12">
-                        <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
-                        <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
-                          <UserAvatar username={room.ownerName} size="sm" />
-                          <span className="truncate">{room.ownerName}</span>
-                          <span className="flex-shrink-0">•</span>
-                          <span 
-                            className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleTimeFormat(room.id);
-                            }}
-                          >
-                            {showAbsoluteTime[room.id] 
-                              ? `Accessed on ${formatDate(room.accessedAt || room.createdAt)}`
-                              : `Accessed ${getTimeAgo(room.accessedAt || room.createdAt)}`
-                            }
-                          </span>
+                {/* Recent Rooms */}
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Clock className="h-5 w-5" />
+                    <h2 className="text-xl font-semibold">Recent Rooms</h2>
+                  </div>
+                  {recentRooms.length > 0 ? (
+                  <div className="flex gap-4 overflow-x-auto pb-2">
+                    {recentRooms.slice(0, 1000).map((room) => (
+                      <div key={room.id} className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            deleteRoom(room.id, false);
+                          }}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="absolute bottom-2 right-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            shareRoom(room.id);
+                          }}
+                        >
+                          <Share className="h-3 w-3" />
+                        </Button>
+                        {copiedRoomId === room.id && (
+                          <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
+                            Link copied!
+                          </div>
+                        )}
+                        <div className="flex flex-col h-full pr-12">
+                          <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
+                          <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
+                            <UserAvatar username={room.ownerName} size="sm" />
+                            <span className="truncate">{room.ownerName}</span>
+                            <span className="flex-shrink-0">•</span>
+                            <span 
+                              className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggleTimeFormat(room.id);
+                              }}
+                            >
+                              {showAbsoluteTime[room.id] 
+                                ? `Accessed on ${formatDate(room.accessedAt || room.createdAt)}`
+                                : `Accessed ${getTimeAgo(room.accessedAt || room.createdAt)}`
+                              }
+                            </span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground py-4">
+                    No recent rooms
+                  </p>
+                )}
                 </div>
-              ) : (
-                <p className="text-sm text-muted-foreground py-4">
-                  No recent rooms
-                </p>
-              )}
-            </div>
+              </>
+            )}
           </div>
-        )}
-      </div>
+        </div>
       
-      <UserSetup 
-        open={showUserSetup} 
-        onComplete={handleUserSetupComplete}
-      />
-    </main>
+        <UserSetup 
+          open={showUserSetup} 
+          onComplete={handleUserSetupComplete}
+        />
+      </main>
+    </UserGuard>
   );
 }
