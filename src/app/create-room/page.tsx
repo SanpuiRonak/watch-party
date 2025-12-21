@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +15,19 @@ export default function CreateRoom() {
   const [streamUrl, setStreamUrl] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
+
+  // Set default room name when user is available
+  useEffect(() => {
+    if (user && !roomName) {
+      setRoomName(`${user.username}'s Watch Party`);
+    }
+  }, [user, roomName]);
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !isCreating) {
+      handleCreateRoom();
+    }
+  };
 
   const handleCreateRoom = async () => {
     if (!roomName.trim()) {
@@ -41,6 +54,7 @@ export default function CreateRoom() {
           roomName: roomName.trim(),
           streamUrl: streamUrl,
           ownerId: user?.id,
+          ownerName: user?.username,
         }),
       });
 
@@ -96,6 +110,7 @@ export default function CreateRoom() {
               placeholder="My Watch Party"
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
+              onKeyPress={handleKeyPress}
               maxLength={50}
               className="mt-1"
             />
@@ -111,6 +126,7 @@ export default function CreateRoom() {
               placeholder="https://example.com/video.mp4"
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
+              onKeyPress={handleKeyPress}
               className="mt-1"
             />
             <p className="text-xs text-muted-foreground mt-1">

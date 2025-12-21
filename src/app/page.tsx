@@ -135,7 +135,7 @@ export default function Home() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-3xl">🎉</span>
-              <h1 className="text-4xl font-bold">Watch Party</h1>
+              <h1 className="text-2xl font-bold">Watch Party</h1>
             </div>
             <div className="flex items-center gap-4">
               {isAuthenticated && user && (

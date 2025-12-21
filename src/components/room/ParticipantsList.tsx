@@ -18,21 +18,21 @@ export function ParticipantsList() {
       </div>
       
       <div className="space-y-2">
-        {room.participants.map((participantId) => {
-          const isOwner = participantId === room.ownerId;
-          const isCurrentUser = participantId === currentUser.id;
+        {room.participants.map((participant) => {
+          const isOwner = participant.id === room.ownerId;
+          const isCurrentUser = participant.id === currentUser.id;
           
           return (
-            <div key={participantId} className="flex items-center space-x-3">
+            <div key={participant.id} className="flex items-center space-x-3">
               <UserAvatar 
-                username={isCurrentUser ? currentUser.username : `User${participantId.slice(0, 8)}`} 
+                username={participant.username} 
                 size="md" 
               />
               
               <div className="flex-1">
                 <div className="flex items-center space-x-2">
                   <span className="text-sm font-medium">
-                    {isCurrentUser ? currentUser.username : `User ${participantId.slice(0, 8)}`}
+                    {participant.username}
                     {isCurrentUser && ' (You)'}
                   </span>
                   {isOwner && (

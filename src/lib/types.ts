@@ -15,14 +15,20 @@ export interface RoomPermissions {
   canSeek: boolean;
 }
 
+export interface Participant {
+  id: string;
+  username: string;
+}
+
 export interface Room {
   id: string;
   name: string;
   ownerId: string;
+  ownerName?: string;
   streamUrl: string;
   videoState: VideoState;
   permissions: RoomPermissions;
-  participants: string[];
+  participants: Participant[];
   createdAt: number;
 }
 
@@ -30,6 +36,7 @@ export interface CreateRoomRequest {
   roomName: string;
   streamUrl: string;
   ownerId: string;
+  ownerName: string;
 }
 
 export type SocketEvents = {

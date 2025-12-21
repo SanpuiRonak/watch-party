@@ -4,9 +4,9 @@ import { Room, CreateRoomRequest } from '@/lib/types';
 
 export async function POST(request: NextRequest) {
   try {
-    const { roomName, streamUrl, ownerId }: CreateRoomRequest = await request.json();
+    const { roomName, streamUrl, ownerId, ownerName }: CreateRoomRequest = await request.json();
     
-    if (!roomName || !streamUrl || !ownerId) {
+    if (!roomName || !streamUrl || !ownerId || !ownerName) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -15,6 +15,7 @@ export async function POST(request: NextRequest) {
       id: roomId,
       name: roomName,
       ownerId,
+      ownerName,
       streamUrl,
       videoState: {
         lastEventTime: 0,
@@ -26,7 +27,7 @@ export async function POST(request: NextRequest) {
         canPlay: true,
         canSeek: true
       },
-      participants: [ownerId],
+      participants: [{ id: ownerId, username: ownerName }],
       createdAt: Date.now()
     };
 

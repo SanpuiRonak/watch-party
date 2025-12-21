@@ -37,13 +37,14 @@ export class RoomManager {
     }
   }
 
-  async addParticipant(roomId: string, userId: string): Promise<Room | null> {
+  async addParticipant(roomId: string, userId: string, username: string): Promise<Room | null> {
     try {
       const room = await this.getRoom(roomId);
       if (!room) return null;
 
-      if (!room.participants.includes(userId)) {
-        room.participants.push(userId);
+      const existingParticipant = room.participants.find(p => p.id === userId);
+      if (!existingParticipant) {
+        room.participants.push({ id: userId, username });
         await this.updateRoom(room);
       }
       
@@ -59,10 +60,24 @@ export class RoomManager {
       const room = await this.getRoom(roomId);
       if (!room) return;
 
-      room.participants = room.participants.filter(id => id !== userId);
+      room.participants = room.participants.filter(p => p.id !== userId);
       await this.updateRoom(room);
     } catch (error) {
       console.error('Error removing participant:', error);
+    }
+  }
+
+  async updatePermissions(roomId: string, permissions: { canPlay: boolean; canSeek: boolean }): Promise<Room | null> {
+    try {
+      const room = await this.getRoom(roomId);
+      if (!room) return null;
+
+      room.permissions = permissions;
+      await this.updateRoom(room);
+      return room;
+    } catch (error) {
+      console.error('Error updating permissions:', error);
+      return null;
     }
   }
 }

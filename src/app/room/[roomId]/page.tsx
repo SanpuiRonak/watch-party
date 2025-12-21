@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { VideoPlayer } from '@/components/room/VideoPlayer';
+import { VideoPlayer } from '@/components/room/ModernVideoPlayer';
 import { RoomControls } from '@/components/room/RoomControls';
+import { RoomSettings } from '@/components/room/RoomSettings';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
 import { UserSetup } from '@/components/user/UserSetup';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -13,7 +14,9 @@ import { useUser } from '@/hooks/useUser';
 import { useAppSelector, useAppDispatch } from '@/lib/store';
 import { setRoom } from '@/lib/store/slices/roomSlice';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Copy, Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import { Share, Settings, Users } from 'lucide-react';
 import { RoomPermissions } from '@/lib/types';
 
 interface RoomPageProps {
@@ -26,16 +29,21 @@ export default function RoomPage({ params }: RoomPageProps) {
   const { user, isAuthenticated, createUser } = useUser();
   const [roomId, setRoomId] = useState<string>('');
   const [showUserSetup, setShowUserSetup] = useState(false);
-  const [copied, setCopied] = useState(false);
   
   const room = useAppSelector(state => state.room.currentRoom);
   const isConnected = useAppSelector(state => state.room.isConnected);
+
+  const shareRoom = async () => {
+    const shareUrl = `${window.location.origin}/room/${roomId}`;
+    await navigator.clipboard.writeText(shareUrl);
+    toast.success('Room link copied to clipboard!');
+  };
 
   useEffect(() => {
     params.then(({ roomId }) => setRoomId(roomId));
   }, [params]);
 
-  const { emitVideoEvent } = useSocket(roomId, user?.id || '');
+  const { emitVideoEvent, emitPermissionsUpdate } = useSocket(roomId, user?.id || '', user?.username || '');
 
   useEffect(() => {
     if (roomId && !isAuthenticated) {
@@ -88,8 +96,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 
   const copyRoomId = async () => {
     await navigator.clipboard.writeText(roomId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    toast.success('Room ID copied to clipboard!');
   };
 
   useEffect(() => {
@@ -117,19 +124,8 @@ export default function RoomPage({ params }: RoomPageProps) {
   const handleUpdatePermissions = async (permissions: RoomPermissions) => {
     if (!user || !room) return;
     
-    try {
-      const response = await fetch(`/api/rooms/${roomId}/permissions`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ permissions, ownerId: user.id }),
-      });
-      
-      if (!response.ok) {
-        console.error('Failed to update permissions');
-      }
-    } catch (error) {
-      console.error('Error updating permissions:', error);
-    }
+    // Emit via socket for real-time updates
+    emitPermissionsUpdate(permissions);
   };
 
   const isOwner = user.id === room.ownerId;
@@ -138,65 +134,105 @@ export default function RoomPage({ params }: RoomPageProps) {
 
   return (
     <UserGuard>
-      <div className="min-h-screen bg-background p-4">
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center space-x-4">
-              <Button variant="ghost" size="icon" onClick={() => router.push('/')}>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold">Watch Party</h1>
+      <div className="min-h-screen bg-background">
+        {/* Full Width Header */}
+        <div className="w-screen bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="px-6 py-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
+                  <span className="text-3xl">🎉</span>
+                  <h1 className="text-2xl font-bold">Watch Party</h1>
+                </div>
+                <div 
+                  className="flex items-center gap-2 text-muted-foreground cursor-pointer hover:bg-accent/50 transition-colors rounded-lg p-2 -m-2" 
+                  onClick={shareRoom}
+                >
+                  <span className="text-lg font-medium">{room.name}</span>
+                  <Share className="h-4 w-4" />
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <ThemeToggle />
+                
                 <div className="flex items-center space-x-2">
-                  <span className="text-sm text-muted-foreground">Room: {roomId}</span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={copyRoomId}
-                    className="h-6 px-2"
-                  >
-                    {copied ? (
-                      <Check className="h-3 w-3" />
-                    ) : (
-                      <Copy className="h-3 w-3" />
-                    )}
-                  </Button>
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
+                  <span className="text-sm text-muted-foreground">
+                    {isConnected ? 'Connected' : 'Disconnected'}
+                  </span>
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <ThemeToggle />
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-              <span className="text-sm text-muted-foreground">
-                {isConnected ? 'Connected' : 'Disconnected'}
-              </span>
-            </div>
           </div>
+        </div>
 
-          {/* Main Content */}
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Main Content */}
+        <div className="flex" style={{height: 'calc(100vh - 120px)'}}>
+          <div className="flex-1 p-2">
             {/* Video Player */}
-            <div className="lg:col-span-3 space-y-4">
+            <div>
               <VideoPlayer
                 streamUrl={room.streamUrl}
                 onVideoEvent={emitVideoEvent}
                 canControl={canPlay || canSeek}
               />
               
-              <RoomControls
-                onVideoEvent={emitVideoEvent}
-                onUpdatePermissions={handleUpdatePermissions}
-                canPlay={canPlay}
-                canSeek={canSeek}
-                isOwner={isOwner}
-              />
+              {/* Mobile Tabs - Only show on mobile */}
+              <div className="mt-2 lg:hidden">
+                <Tabs defaultValue="participants" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="participants" className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Participants
+                    </TabsTrigger>
+                    <TabsTrigger value="settings" className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      Room Settings
+                    </TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="participants" className="mt-4">
+                    <ParticipantsList />
+                  </TabsContent>
+                  
+                  <TabsContent value="settings" className="mt-4">
+                    <RoomSettings
+                      onUpdatePermissions={handleUpdatePermissions}
+                      isOwner={isOwner}
+                    />
+                  </TabsContent>
+                </Tabs>
+              </div>
             </div>
+          </div>
 
-            {/* Sidebar */}
-            <div className="space-y-4">
-              <ParticipantsList />
+          {/* Right Sidebar - Desktop Only */}
+          <div className="hidden lg:block w-80 bg-muted/30 border-l">
+            <div className="h-full p-4">
+              <Tabs defaultValue="participants" className="w-full h-full flex flex-col">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="participants" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Participants
+                  </TabsTrigger>
+                  <TabsTrigger value="settings" className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    Settings
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="participants" className="mt-4 flex-1 overflow-hidden">
+                  <ParticipantsList />
+                </TabsContent>
+                
+                <TabsContent value="settings" className="mt-4 flex-1 overflow-hidden">
+                  <RoomSettings
+                    onUpdatePermissions={handleUpdatePermissions}
+                    isOwner={isOwner}
+                  />
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>
