@@ -72,7 +72,7 @@ export default function RoomPage({ params }: RoomPageProps) {
               
               const existingRecent = JSON.parse(localStorage.getItem(`recentRooms_${user.id}`) || '[]');
               const updatedRecent = [recentRoom, ...existingRecent.filter((r: any) => r.id !== roomData.id)];
-              localStorage.setItem(`recentRooms_${user.id}`, JSON.stringify(updatedRecent.slice(0, 10)));
+              localStorage.setItem(`recentRooms_${user.id}`, JSON.stringify(updatedRecent.slice(0, 1000)));
             }
           }
         })

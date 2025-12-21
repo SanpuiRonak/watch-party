@@ -18,9 +18,10 @@ export const useUser = () => {
   }, [dispatch]);
 
   const createUser = (username?: string): User => {
+    const trimmedUsername = (username || generateUsername()).trim().slice(0, 50);
     const newUser: User = {
       id: crypto.randomUUID(),
-      username: username || generateUsername(),
+      username: trimmedUsername,
     };
     
     dispatch(setUser(newUser));

@@ -27,6 +27,8 @@ export default function Home() {
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
   const [myRooms, setMyRooms] = useState<Room[]>([]);
   const [recentRooms, setRecentRooms] = useState<Room[]>([]);
+  const [copiedRoomId, setCopiedRoomId] = useState<string | null>(null);
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState<{[key: string]: boolean}>({});
 
   const handleCreateRoom = () => {
     if (!isAuthenticated) {
@@ -70,12 +72,36 @@ export default function Home() {
       const storedMyRooms = localStorage.getItem(`myRooms_${user.id}`);
       const storedRecentRooms = localStorage.getItem(`recentRooms_${user.id}`);
       
-      if (storedMyRooms) {
-        setMyRooms(JSON.parse(storedMyRooms));
-      }
-      if (storedRecentRooms) {
-        setRecentRooms(JSON.parse(storedRecentRooms));
-      }
+      // Always show mock data for testing - remove 'if (storedMyRooms)' condition
+      // Mock data for My Rooms with edge cases
+      const mockMyRooms = Array.from({ length: 1000 }, (_, i) => ({
+        id: `my-room-${i + 1}`,
+        name: i % 10 === 0 ? `Super Long Room Name That Should Be Truncated ${i + 1}` :
+              i % 15 === 0 ? `X${i + 1}` :
+              `Room ${i + 1}`,
+        streamUrl: `https://example.com/stream-${i + 1}.mp4`,
+        createdAt: Date.now() - (i * 3600000), // Each room 1 hour older
+        ownerId: user.id,
+        ownerName: user.username
+      }));
+      setMyRooms(mockMyRooms);
+      
+      // Always show mock data for testing - remove 'if (storedRecentRooms)' condition  
+      // Mock data for Recent Rooms with edge cases
+      const mockRecentRooms = Array.from({ length: 1000 }, (_, i) => ({
+        id: `recent-room-${i + 1}`,
+        name: i % 8 === 0 ? `Gaming Stream Marathon Session ${i + 1}` :
+              i % 12 === 0 ? `Y${i + 1}` :
+              `Recent Room ${i + 1}`,
+        streamUrl: `https://example.com/recent-${i + 1}.mp4`,
+        createdAt: Date.now() - ((i + 10) * 86400000), // Created days ago
+        accessedAt: Date.now() - (i * 1800000), // Each room 30 min older access
+        ownerId: `user-${i % 20}`,
+        ownerName: i % 7 === 0 ? `VeryLongUsername${i + 1}` :
+                  i % 11 === 0 ? `U${i + 1}` :
+                  `User${i + 1}`
+      }));
+      setRecentRooms(mockRecentRooms);
     }
   }, [isAuthenticated, user]);
 
@@ -83,10 +109,31 @@ export default function Home() {
     return new Date(timestamp).toLocaleDateString();
   };
 
+  const getTimeAgo = (timestamp: number) => {
+    const now = Date.now();
+    const diff = now - timestamp;
+    const minutes = Math.floor(diff / 60000);
+    const hours = Math.floor(diff / 3600000);
+    const days = Math.floor(diff / 86400000);
+    
+    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
+    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    return 'Just now';
+  };
+
+  const toggleTimeFormat = (roomId: string) => {
+    setShowAbsoluteTime(prev => ({
+      ...prev,
+      [roomId]: !prev[roomId]
+    }));
+  };
+
   const shareRoom = async (roomId: string) => {
     const shareUrl = `${window.location.origin}/room/${roomId}`;
     await navigator.clipboard.writeText(shareUrl);
-    // Could add a toast notification here
+    setCopiedRoomId(roomId);
+    setTimeout(() => setCopiedRoomId(null), 2000);
   };
 
   const deleteRoom = (roomId: string, isMyRoom: boolean) => {
@@ -102,7 +149,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-background">
+    <main className="min-h-screen bg-background flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between p-6">
         <div className="flex items-center gap-2">
@@ -115,142 +162,158 @@ export default function Home() {
               Welcome back, {user.username}!
             </p>
           )}
+          <div className="flex gap-2">
+            <Button onClick={handleCreateRoom} size="sm" className="flex items-center gap-2">
+              <Plus className="h-4 w-4" />
+              Create Room
+            </Button>
+            
+            <Button onClick={handleJoinRoom} variant="outline" size="sm" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Join Room
+            </Button>
+          </div>
           <ThemeToggle />
         </div>
       </div>
       
-      <div className="max-w-6xl mx-auto px-6 pb-6">
-        {/* Welcome Section */}
-        <div className="flex items-center justify-center min-h-[50vh]">
-          <div className="text-center space-y-8">
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button onClick={handleCreateRoom} size="lg" className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
-                Create Room
-              </Button>
-              
-              <Button onClick={handleJoinRoom} variant="outline" size="lg" className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Join Room
-              </Button>
-            </div>
-          </div>
-        </div>
-
+      <div className="flex-1 flex flex-col justify-end px-6 pb-6">
         {/* Room Sections */}
         {isAuthenticated && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+          <div className="space-y-6">
             {/* My Rooms */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Rooms Created by Me
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {myRooms.length > 0 ? (
-                  <div className="space-y-3">
-                    {myRooms.slice(0, 5).map((room) => (
-                      <div key={room.id} className="relative p-4 border rounded-lg hover:bg-muted/50 group">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteRoom(room.id, true);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <div className="cursor-pointer" onClick={() => router.push(`/room/${room.id}`)}>
-                          <h4 className="font-medium truncate pr-8">{room.name}</h4>
-                          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                            <UserAvatar username={room.ownerName} size="sm" />
-                            <span>{room.ownerName}</span>
-                            <span>•</span>
-                            <span>{formatDate(room.createdAt)}</span>
-                          </div>
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <User className="h-5 w-5" />
+                <h2 className="text-xl font-semibold">Rooms Created by Me</h2>
+              </div>
+              {myRooms.length > 0 ? (
+                <div className="flex gap-4 overflow-x-auto pb-2">
+                  {myRooms.map((room) => (
+                    <div key={room.id} className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteRoom(room.id, true);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute bottom-2 right-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          shareRoom(room.id);
+                        }}
+                      >
+                        <Share className="h-3 w-3" />
+                      </Button>
+                      {copiedRoomId === room.id && (
+                        <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
+                          Link copied!
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            shareRoom(room.id);
-                          }}
-                        >
-                          <Share className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
+                      )}
+                      <div className="flex flex-col h-full pr-12">
+                        <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
+                        <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
+                          <UserAvatar username={room.ownerName} size="sm" />
+                          <span className="truncate">{room.ownerName}</span>
+                          <span className="flex-shrink-0">•</span>
+                          <span 
+                            className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTimeFormat(room.id);
+                            }}
+                          >
+                            {showAbsoluteTime[room.id] 
+                              ? `Created on ${formatDate(room.createdAt)}`
+                              : `Created ${getTimeAgo(room.createdAt)}`
+                            }
+                          </span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No rooms created yet
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4">
+                  No rooms created yet
+                </p>
+              )}
+            </div>
 
             {/* Recent Rooms */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Recent Rooms
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {recentRooms.length > 0 ? (
-                  <div className="space-y-3">
-                    {recentRooms.slice(0, 5).map((room) => (
-                      <div key={room.id} className="relative p-4 border rounded-lg hover:bg-muted/50 group">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteRoom(room.id, false);
-                          }}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                        <div className="cursor-pointer" onClick={() => router.push(`/room/${room.id}`)}>
-                          <h4 className="font-medium truncate pr-8">{room.name}</h4>
-                          <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
-                            <UserAvatar username={room.ownerName} size="sm" />
-                            <span>{room.ownerName}</span>
-                            <span>•</span>
-                            <span>{formatDate(room.accessedAt || room.createdAt)}</span>
-                          </div>
+            <div>
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="h-5 w-5" />
+                <h2 className="text-xl font-semibold">Recent Rooms</h2>
+              </div>
+              {recentRooms.length > 0 ? (
+                <div className="flex gap-4 overflow-x-auto pb-2">
+                  {recentRooms.slice(0, 1000).map((room) => (
+                    <div key={room.id} className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteRoom(room.id, false);
+                        }}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="absolute bottom-2 right-2"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          shareRoom(room.id);
+                        }}
+                      >
+                        <Share className="h-3 w-3" />
+                      </Button>
+                      {copiedRoomId === room.id && (
+                        <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
+                          Link copied!
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="mt-3 w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            shareRoom(room.id);
-                          }}
-                        >
-                          <Share className="h-4 w-4 mr-2" />
-                          Share
-                        </Button>
+                      )}
+                      <div className="flex flex-col h-full pr-12">
+                        <h4 className="font-medium break-words cursor-pointer hover:underline" onClick={() => router.push(`/room/${room.id}`)}>{room.name}</h4>
+                        <div className="flex items-center gap-2 mt-auto pt-2 text-xs text-muted-foreground">
+                          <UserAvatar username={room.ownerName} size="sm" />
+                          <span className="truncate">{room.ownerName}</span>
+                          <span className="flex-shrink-0">•</span>
+                          <span 
+                            className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleTimeFormat(room.id);
+                            }}
+                          >
+                            {showAbsoluteTime[room.id] 
+                              ? `Accessed on ${formatDate(room.accessedAt || room.createdAt)}`
+                              : `Accessed ${getTimeAgo(room.accessedAt || room.createdAt)}`
+                            }
+                          </span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No recent rooms
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground py-4">
+                  No recent rooms
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>

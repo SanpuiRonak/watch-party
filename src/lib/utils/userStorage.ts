@@ -25,5 +25,6 @@ export const generateUsername = (): string => {
   const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
   const noun = nouns[Math.floor(Math.random() * nouns.length)];
   const num = Math.floor(Math.random() * 100);
-  return `${adj}${noun}${num}`;
+  const username = `${adj}${noun}${num}`;
+  return username.slice(0, 50); // Ensure generated username is within limit
 };

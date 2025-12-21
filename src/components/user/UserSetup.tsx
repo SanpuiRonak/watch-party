@@ -21,7 +21,8 @@ export function UserSetup({ open, onComplete }: UserSetupProps) {
   };
 
   const handleConfirm = () => {
-    onComplete(username);
+    const trimmedUsername = username.trim().slice(0, 50);
+    onComplete(trimmedUsername);
   };
 
   return (
@@ -36,8 +37,9 @@ export function UserSetup({ open, onComplete }: UserSetupProps) {
           <div className="flex w-full space-x-2">
             <Input
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value.slice(0, 50))}
               placeholder="Username"
+              maxLength={50}
             />
             <Button variant="outline" size="icon" onClick={handleRegenerateUsername}>
               <RefreshCw className="h-4 w-4" />
