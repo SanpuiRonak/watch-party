@@ -29,9 +29,9 @@ export async function GET(req: NextRequest) {
     io.on('connection', (socket) => {
       console.log('Client connected:', socket.id);
 
-      socket.on('join-room', async (roomId: string, userId: string) => {
+      socket.on('join-room', async (roomId: string, userId: string, username: string) => {
         try {
-          const room = await roomManager.addParticipant(roomId, userId);
+          const room = await roomManager.addParticipant(roomId, userId, username);
           
           if (!room) {
             socket.emit('error', 'Room not found');
@@ -88,8 +88,7 @@ export async function GET(req: NextRequest) {
             return;
           }
 
-          room.permissions = permissions;
-          await roomManager.updateRoom(room);
+          await roomManager.updatePermissions(roomId, permissions);
           
           // Broadcast updated permissions to all clients in the room
           io.to(roomId).emit('permissions-updated', permissions);

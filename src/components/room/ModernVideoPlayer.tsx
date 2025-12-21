@@ -9,7 +9,7 @@ import { Slider } from '@/components/ui/slider';
 
 interface VideoPlayerProps {
   streamUrl: string;
-  onVideoEvent: (eventType: 'play' | 'pause' | 'seek', currentTime: number) => void;
+  onVideoEvent: (eventType: 'play' | 'pause' | 'seek', currentTime: number, playbackRate?: number) => void;
   canControl: boolean;
 }
 
@@ -30,7 +30,38 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   const isConnected = useAppSelector(state => state.room.isConnected);
   const isOwner = user?.id === room?.ownerId;
 
-  // Sync with server video state
+  // Sync playback rate
+  // TODO: Fix playback speed synchronization - currently not syncing properly across viewers
+  useEffect(() => {
+    if (!videoRef.current || !serverVideoState) return;
+    const rate = serverVideoState.playbackRate || 1;
+    if (videoRef.current.playbackRate !== rate && isFinite(rate) && rate > 0) {
+      videoRef.current.playbackRate = rate;
+      setPlaybackRate(rate);
+    }
+  }, [serverVideoState?.playbackRate]);
+
+  // Initial sync when video loads and server state is available
+  useEffect(() => {
+    if (!videoRef.current || !serverVideoState) return;
+
+    const video = videoRef.current;
+    const serverTime = getCurrentTime(serverVideoState);
+    
+    // Set initial position when video first loads
+    if (video.readyState >= 2 && Math.abs(video.currentTime - serverTime) > 1) {
+      video.currentTime = serverTime;
+    }
+
+    // Set initial play state
+    if (serverVideoState.isPlaying && video.paused) {
+      video.play().catch(console.error);
+    } else if (!serverVideoState.isPlaying && !video.paused) {
+      video.pause();
+    }
+  }, [serverVideoState?.lastUpdated]);
+
+  // Sync with server video state during playback
   useEffect(() => {
     if (!videoRef.current || !serverVideoState || isUserAction) return;
 
@@ -148,6 +179,7 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
     videoRef.current.playbackRate = rate;
     setPlaybackRate(rate);
     setShowSpeedMenu(false);
+    onVideoEvent('seek', videoRef.current.currentTime, rate);
   };
 
   const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];

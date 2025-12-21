@@ -4,8 +4,8 @@ export interface User {
 }
 
 export interface VideoState {
-  lastEventTime: number;
-  lastEventTimestamp: number;
+  currentTime: number;
+  lastUpdated: number;
   isPlaying: boolean;
   playbackRate: number;
 }

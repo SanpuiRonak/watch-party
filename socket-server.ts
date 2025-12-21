@@ -19,7 +19,7 @@ app.prepare().then(() => {
 
   const io = new Server(httpServer, {
     cors: {
-      origin: "http://localhost:3000",
+      origin: process.env.NODE_ENV === 'production' ? false : "http://localhost:3000",
       methods: ["GET", "POST"]
     }
   });
@@ -83,9 +83,9 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on('video-event', async (roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number, userId: string) => {
+    socket.on('video-event', async (roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number, userId: string, playbackRate?: number) => {
       try {
-        console.log(`[SocketServer] Received video-event: ${eventType} from userId: ${userId} in room: ${roomId}`);
+        console.log(`[SocketServer] Received video-event: ${eventType} from userId: ${userId} in room: ${roomId}, playbackRate: ${playbackRate}`);
         const room = await roomManager.getRoom(roomId);
         if (!room) {
           console.log(`[SocketServer] Room ${roomId} not found`);
@@ -110,11 +110,11 @@ app.prepare().then(() => {
           console.log(`Owner ${userId} performing ${eventType} - always allowed`);
         }
 
-        const videoState = await roomManager.updateVideoState(roomId, eventType, currentTime);
+        const videoState = await roomManager.updateVideoState(roomId, eventType, currentTime, playbackRate || 1);
         
         if (videoState) {
           io.to(roomId).emit('video-sync', videoState);
-          console.log(`Video ${eventType} in room ${roomId} at ${currentTime}s by user ${userId}`);
+          console.log(`Video ${eventType} in room ${roomId} at ${currentTime}s by user ${userId}, rate: ${playbackRate || 1}x`);
         }
       } catch (error) {
         console.error('Error handling video event:', error);

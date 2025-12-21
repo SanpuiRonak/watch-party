@@ -63,10 +63,10 @@ export const useSocket = (roomId: string, userId: string, username: string) => {
     };
   }, [roomId, userId, username, dispatch]);
 
-  const emitVideoEvent = (eventType: 'play' | 'pause' | 'seek', currentTime: number) => {
-    console.log('[useSocket] Emitting video event:', eventType, 'userId:', userId);
+  const emitVideoEvent = (eventType: 'play' | 'pause' | 'seek', currentTime: number, playbackRate?: number) => {
+    console.log('[useSocket] Emitting video event:', eventType, 'userId:', userId, 'playbackRate:', playbackRate);
     if (socketRef.current) {
-      socketRef.current.emit('video-event', roomId, eventType, currentTime, userId);
+      socketRef.current.emit('video-event', roomId, eventType, currentTime, userId, playbackRate);
     }
   };
 

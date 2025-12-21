@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import redis from '@/lib/redis';
-import { Room, CreateRoomRequest } from '@/lib/types';
+import { RoomManager } from '@/lib/services/roomManager';
+import { CreateRoomRequest } from '@/lib/types';
+
+const roomManager = new RoomManager();
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,28 +13,7 @@ export async function POST(request: NextRequest) {
     }
 
     const roomId = crypto.randomUUID();
-    const room: Room = {
-      id: roomId,
-      name: roomName,
-      ownerId,
-      ownerName,
-      streamUrl,
-      videoState: {
-        lastEventTime: 0,
-        lastEventTimestamp: Date.now(),
-        isPlaying: false,
-        playbackRate: 1
-      },
-      permissions: {
-        canPlay: true,
-        canSeek: true,
-        canChangeSpeed: true
-      },
-      participants: [{ id: ownerId, username: ownerName }],
-      createdAt: Date.now()
-    };
-
-    await redis.setex(`room:${roomId}`, 86400, JSON.stringify(room));
+    const room = await roomManager.createRoom(roomId, roomName, streamUrl, ownerId, ownerName);
     
     return NextResponse.json({ roomId });
   } catch (error) {

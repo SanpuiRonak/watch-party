@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { VideoPlayer } from '@/components/room/ModernVideoPlayer';
-import { RoomControls } from '@/components/room/RoomControls';
 import { RoomSettings } from '@/components/room/RoomSettings';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
 import { UserSetup } from '@/components/user/UserSetup';
@@ -51,6 +50,10 @@ export default function RoomPage({ params }: RoomPageProps) {
   }, [params]);
 
   const { emitVideoEvent, emitPermissionsUpdate } = useSocket(roomId, user?.id || '', user?.username || '');
+
+  const handleVideoEvent = (eventType: 'play' | 'pause' | 'seek', currentTime: number, playbackRate?: number) => {
+    emitVideoEvent(eventType, currentTime, playbackRate);
+  };
 
   useEffect(() => {
     if (roomId && !isAuthenticated) {
@@ -183,7 +186,7 @@ export default function RoomPage({ params }: RoomPageProps) {
             <div>
               <VideoPlayer
                 streamUrl={room.streamUrl}
-                onVideoEvent={emitVideoEvent}
+                onVideoEvent={handleVideoEvent}
                 canControl={isOwner || canPlay || canSeek || canChangeSpeed}
               />
               

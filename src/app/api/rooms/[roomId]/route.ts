@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import redis from '@/lib/redis';
-import { Room } from '@/lib/types';
+import { RoomManager } from '@/lib/services/roomManager';
+
+const roomManager = new RoomManager();
 
 export async function GET(
   request: NextRequest,
@@ -8,13 +9,12 @@ export async function GET(
 ) {
   try {
     const { roomId } = await params;
-    const roomData = await redis.get(`room:${roomId}`);
+    const room = await roomManager.getRoom(roomId);
     
-    if (!roomData) {
+    if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    const room: Room = JSON.parse(roomData);
     return NextResponse.json(room);
   } catch (error) {
     return NextResponse.json({ error: 'Failed to get room' }, { status: 500 });

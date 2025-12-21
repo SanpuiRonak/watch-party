@@ -1,10 +1,9 @@
-version: '3.8'
-
 services:
-  redis:
-    image: redis:7-alpine
+  mongodb:
+    image: mongo:7
     ports:
-      - "6379:6379"
-    command: redis-server --appendonly yes
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=watchparty
     volumes:
-      - ./redis-data:/data
+      - ./mongo-data:/data/db

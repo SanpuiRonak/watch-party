@@ -1,90 +1,126 @@
-import redis from '@/lib/redis';
-import { Room, VideoState } from '@/lib/types';
-import { createVideoEvent } from '@/lib/utils/videoSync';
+import { Room, Participant, VideoState, RoomPermissions } from '../types';
+import { connectToDatabase } from './mongodb';
 
 export class RoomManager {
+  private async getCollection() {
+    const { db } = await connectToDatabase();
+    return db.collection('rooms');
+  }
+
+  async createRoom(id: string, name: string, streamUrl: string, ownerId: string, ownerName: string): Promise<Room> {
+    const room: Room = {
+      id,
+      name,
+      streamUrl,
+      ownerId,
+      ownerName,
+      participants: [{ id: ownerId, username: ownerName }],
+      videoState: {
+        isPlaying: false,
+        currentTime: 0,
+        lastUpdated: Date.now(),
+        playbackRate: 1
+      },
+      permissions: {
+        canPlay: true,
+        canSeek: true,
+        canChangeSpeed: true
+      },
+      createdAt: Date.now()
+    };
+
+    const collection = await this.getCollection();
+    await collection.insertOne(room);
+    console.log(`Room created: ${id}`);
+    return room;
+  }
+
   async getRoom(roomId: string): Promise<Room | null> {
-    try {
-      const data = await redis.get(`room:${roomId}`);
-      return data ? JSON.parse(data) : null;
-    } catch (error) {
-      console.error('Error getting room:', error);
-      return null;
-    }
-  }
-
-  async updateRoom(room: Room): Promise<void> {
-    try {
-      await redis.setex(`room:${room.id}`, 86400, JSON.stringify(room));
-    } catch (error) {
-      console.error('Error updating room:', error);
-    }
-  }
-
-  async updateVideoState(roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number): Promise<VideoState | null> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room) return null;
-
-      const videoState = createVideoEvent(eventType, currentTime);
-      room.videoState = videoState;
-      
-      await this.updateRoom(room);
-      return videoState;
-    } catch (error) {
-      console.error('Error updating video state:', error);
-      return null;
-    }
+    const collection = await this.getCollection();
+    const room = await collection.findOne({ id: roomId });
+    return room ? (room as any) : null;
   }
 
   async addParticipant(roomId: string, userId: string, username: string): Promise<Room | null> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room) return null;
-
-      const existingParticipant = room.participants.find(p => p.id === userId);
-      if (!existingParticipant) {
-        room.participants.push({ id: userId, username });
-        await this.updateRoom(room);
-      }
-      
-      return room;
-    } catch (error) {
-      console.error('Error adding participant:', error);
+    const collection = await this.getCollection();
+    const room = await collection.findOne({ id: roomId });
+    
+    if (!room) {
+      console.log(`Room ${roomId} not found`);
       return null;
     }
+
+    // Check if participant already exists
+    const existingParticipant = room.participants.find((p: Participant) => p.id === userId);
+    if (existingParticipant) {
+      console.log(`Participant ${username} already in room ${roomId}`);
+      return room as any;
+    }
+
+    // Add new participant
+    const updatedRoom = await collection.findOneAndUpdate(
+      { id: roomId },
+      { $push: { participants: { id: userId, username } } } as any,
+      { returnDocument: 'after' }
+    );
+
+    console.log(`Added participant ${username} to room ${roomId}`);
+    return updatedRoom as any;
   }
 
-  async removeParticipant(roomId: string, userId: string): Promise<void> {
-    try {
-      const room = await this.getRoom(roomId);
-      if (!room) return;
+  async removeParticipant(roomId: string, userId: string): Promise<Room | null> {
+    const collection = await this.getCollection();
+    const updatedRoom = await collection.findOneAndUpdate(
+      { id: roomId },
+      { $pull: { participants: { id: userId } } } as any,
+      { returnDocument: 'after' }
+    );
 
-      room.participants = room.participants.filter(p => p.id !== userId);
-      await this.updateRoom(room);
-    } catch (error) {
-      console.error('Error removing participant:', error);
-    }
+    console.log(`Removed participant ${userId} from room ${roomId}`);
+    return updatedRoom as any;
   }
 
-  async updatePermissions(roomId: string, permissions: { canPlay: boolean; canSeek: boolean; canChangeSpeed: boolean }): Promise<Room | null> {
-    try {
-      console.log('[RoomManager] Updating permissions for room:', roomId, permissions);
-      const room = await this.getRoom(roomId);
-      if (!room) {
-        console.log('[RoomManager] Room not found:', roomId);
-        return null;
-      }
+  async updateVideoState(roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number, playbackRate: number = 1): Promise<VideoState | null> {
+    const videoState: VideoState = {
+      isPlaying: eventType === 'play',
+      currentTime,
+      lastUpdated: Date.now(),
+      playbackRate
+    };
 
-      console.log('[RoomManager] Current permissions:', room.permissions);
-      room.permissions = permissions;
-      console.log('[RoomManager] New permissions:', room.permissions);
-      await this.updateRoom(room);
-      console.log('[RoomManager] Room updated successfully');
-      return room;
-    } catch (error) {
-      console.error('Error updating permissions:', error);
-      return null;
+    const collection = await this.getCollection();
+    await collection.updateOne(
+      { id: roomId },
+      { $set: { videoState } } as any
+    );
+
+    console.log(`Updated video state for room ${roomId}: ${eventType} at ${currentTime}s, rate ${playbackRate}x`);
+    return videoState;
+  }
+
+  async updatePermissions(roomId: string, permissions: RoomPermissions): Promise<Room | null> {
+    console.log('[RoomManager] Updating permissions for room:', roomId, permissions);
+    
+    const collection = await this.getCollection();
+    const updatedRoom = await collection.findOneAndUpdate(
+      { id: roomId },
+      { $set: { permissions } } as any,
+      { returnDocument: 'after' }
+    );
+
+    if (updatedRoom) {
+      console.log('[RoomManager] Successfully updated permissions:', updatedRoom.permissions);
+    } else {
+      console.log('[RoomManager] Failed to update permissions - room not found');
     }
+    
+    return updatedRoom as any;
+  }
+
+  async deleteRoom(roomId: string): Promise<boolean> {
+    const collection = await this.getCollection();
+    const result = await collection.deleteOne({ id: roomId });
+    console.log(`Deleted room ${roomId}`);
+    return result.deletedCount > 0;
   }
 }

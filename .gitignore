@@ -93,3 +93,4 @@ temp/
 # Project specific
 *.prompt
 redis-data/
+mongo-data/

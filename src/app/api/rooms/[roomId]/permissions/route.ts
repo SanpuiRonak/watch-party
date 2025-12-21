@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import redis from '@/lib/redis';
-import { Room, RoomPermissions } from '@/lib/types';
+import { RoomManager } from '@/lib/services/roomManager';
+import { RoomPermissions } from '@/lib/types';
+
+const roomManager = new RoomManager();
 
 export async function PUT(
   request: NextRequest,
@@ -10,20 +12,17 @@ export async function PUT(
     const { roomId } = await params;
     const { permissions, ownerId }: { permissions: RoomPermissions; ownerId: string } = await request.json();
     
-    const roomData = await redis.get(`room:${roomId}`);
-    if (!roomData) {
+    const room = await roomManager.getRoom(roomId);
+    if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
-
-    const room: Room = JSON.parse(roomData);
     
     // Verify owner
     if (room.ownerId !== ownerId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
-    room.permissions = permissions;
-    await redis.setex(`room:${roomId}`, 86400, JSON.stringify(room));
+    await roomManager.updatePermissions(roomId, permissions);
     
     return NextResponse.json({ success: true });
   } catch (error) {

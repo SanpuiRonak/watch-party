@@ -1,0 +1,29 @@
+networks:
+  watchparty-network:
+    driver: bridge
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_DB=watchparty
+    depends_on:
+      - mongodb
+    networks:
+      - watchparty-network
+
+  mongodb:
+    image: mongo:7
+    environment:
+      - MONGO_INITDB_DATABASE=watchparty
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - watchparty-network
+
+volumes:
+  mongo-data:

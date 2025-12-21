@@ -88,7 +88,6 @@ export default function Home() {
   };
 
   const getTimeAgo = (timestamp: number) => {
-    // TODO: Fix hydration issue - use dynamic time calculation after hydration
     const now = 1700000000000; // Fixed timestamp for SSR consistency
     const diff = now - timestamp;
     const minutes = Math.floor(diff / 60000);
