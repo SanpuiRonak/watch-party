@@ -1,11 +1,16 @@
 export const validateStreamUrl = async (url: string): Promise<{ isValid: boolean; finalUrl?: string }> => {
   try {
-    // Follow redirects with explicit limit (fetch default is 20, but let's be explicit)
+    // Create manual timeout controller for better browser support
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000);
+    
     const response = await fetch(url, { 
       method: 'HEAD',
       redirect: 'follow', // Automatically stops after 20 redirects
-      signal: AbortSignal.timeout(10000) // 10 second timeout
+      signal: controller.signal
     });
+    
+    clearTimeout(timeoutId);
     
     const contentType = response.headers.get('content-type');
     const finalUrl = response.url; // This will be the final URL after redirects

@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { validateStreamUrl } from '@/lib/utils/validation';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 
@@ -12,7 +11,6 @@ export default function CreateRoom() {
   const router = useRouter();
   const { user } = useUser();
   const [streamUrl, setStreamUrl] = useState('');
-  const [isValidating, setIsValidating] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
@@ -22,36 +20,29 @@ export default function CreateRoom() {
       return;
     }
 
-    setIsValidating(true);
-    setError('');
-
-    const { isValid, finalUrl } = await validateStreamUrl(streamUrl);
-    setIsValidating(false);
-
-    if (!isValid) {
-      setError('Invalid stream URL. Please check the URL and try again.');
-      return;
-    }
-
     setIsCreating(true);
+    setError('');
     
     try {
       const response = await fetch('/api/rooms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          streamUrl: finalUrl || streamUrl, // Use final URL if available
+          streamUrl: streamUrl,
           ownerId: user?.id,
         }),
       });
 
       if (response.ok) {
-        const { roomId } = await response.json();
-        router.push(`/room/${roomId}`);
+        const data = await response.json();
+        router.push(`/room/${data.roomId}`);
       } else {
+        const errorData = await response.text();
+        console.error('API Error:', errorData);
         setError('Failed to create room. Please try again.');
       }
-    } catch {
+    } catch (err) {
+      console.error('Request failed:', err);
       setError('Failed to create room. Please try again.');
     } finally {
       setIsCreating(false);
@@ -89,13 +80,13 @@ export default function CreateRoom() {
           
           <Button 
             onClick={handleCreateRoom} 
-            disabled={isValidating || isCreating}
+            disabled={isCreating}
             className="w-full"
           >
-            {(isValidating || isCreating) && (
+            {isCreating && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {isValidating ? 'Validating...' : isCreating ? 'Creating...' : 'Create Room'}
+            {isCreating ? 'Creating...' : 'Create Room'}
           </Button>
         </div>
       </div>
