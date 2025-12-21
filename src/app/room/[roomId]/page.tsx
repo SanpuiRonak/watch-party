@@ -9,7 +9,8 @@ import { UserSetup } from '@/components/user/UserSetup';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
-import { useAppSelector } from '@/lib/store';
+import { useAppSelector, useAppDispatch } from '@/lib/store';
+import { setRoom } from '@/lib/store/slices/roomSlice';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Copy, Check } from 'lucide-react';
 import { RoomPermissions } from '@/lib/types';
@@ -20,6 +21,7 @@ interface RoomPageProps {
 
 export default function RoomPage({ params }: RoomPageProps) {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const { user, isAuthenticated, createUser } = useUser();
   const [roomId, setRoomId] = useState<string>('');
   const [showUserSetup, setShowUserSetup] = useState(false);
@@ -42,11 +44,19 @@ export default function RoomPage({ params }: RoomPageProps) {
 
   useEffect(() => {
     if (roomId && isAuthenticated && !room) {
-      // Check if room exists
+      // Load room data
       fetch(`/api/rooms/${roomId}`)
         .then(res => {
           if (!res.ok) {
             router.push('/404');
+            return;
+          }
+          return res.json();
+        })
+        .then(roomData => {
+          if (roomData) {
+            // Set room data in Redux while socket connects
+            dispatch(setRoom(roomData));
           }
         })
         .catch(() => router.push('/404'));
