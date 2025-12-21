@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { loadUser } from '@/lib/utils/userStorage';
 
@@ -10,13 +10,20 @@ interface UserGuardProps {
 
 export function UserGuard({ children }: UserGuardProps) {
   const router = useRouter();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
     const user = loadUser();
     if (!user) {
-      router.push('/user');
+      const currentPath = window.location.pathname + window.location.search;
+      router.push(`/user?returnUrl=${encodeURIComponent(currentPath)}`);
     }
   }, [router]);
+
+  if (!isClient) {
+    return <>{children}</>; // Render children on server
+  }
 
   const user = loadUser();
   if (!user) {

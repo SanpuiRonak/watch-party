@@ -92,13 +92,15 @@ export default function RoomPage({ params }: RoomPageProps) {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  useEffect(() => {
+    if (roomId && !isAuthenticated) {
+      const currentPath = window.location.pathname + window.location.search;
+      router.replace(`/user?returnUrl=${encodeURIComponent(currentPath)}`);
+    }
+  }, [roomId, isAuthenticated, router]);
+
   if (!isAuthenticated) {
-    return (
-      <UserSetup 
-        open={showUserSetup} 
-        onComplete={handleUserSetupComplete}
-      />
-    );
+    return null;
   }
 
   if (!room || !user) {
