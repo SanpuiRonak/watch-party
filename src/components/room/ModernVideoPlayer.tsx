@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAppSelector } from '@/lib/store';
 import { getCurrentTime } from '@/lib/utils/videoSync';
-import { Play, Pause, Volume2, VolumeX, Maximize, PictureInPicture2 } from 'lucide-react';
+import { Play, Pause, Volume2, VolumeX, Maximize, PictureInPicture2, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 
@@ -20,6 +20,8 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
+  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
   const [isUserAction, setIsUserAction] = useState(false);
   
   const serverVideoState = useAppSelector(state => state.room.serverVideoState);
@@ -125,6 +127,15 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
     }
   };
 
+  const handlePlaybackRateChange = (rate: number) => {
+    if (!videoRef.current) return;
+    videoRef.current.playbackRate = rate;
+    setPlaybackRate(rate);
+    setShowSpeedMenu(false);
+  };
+
+  const speedOptions = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2];
+
   const formatTime = (time: number) => {
     const minutes = Math.floor(time / 60);
     const seconds = Math.floor(time % 60);
@@ -132,7 +143,7 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   };
 
   return (
-    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden group">
+    <div className="relative w-full aspect-video bg-black rounded-lg overflow-hidden group border border-black dark:border-white">
       <video
         ref={videoRef}
         src={streamUrl}
@@ -200,6 +211,33 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Playback Speed */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                className="text-white hover:bg-white/20 text-xs px-2"
+              >
+                {playbackRate}x
+              </Button>
+              {showSpeedMenu && (
+                <div className="absolute bottom-full mb-2 right-0 bg-black/90 rounded-md p-2 min-w-16">
+                  {speedOptions.map((speed) => (
+                    <button
+                      key={speed}
+                      onClick={() => handlePlaybackRateChange(speed)}
+                      className={`block w-full text-left px-2 py-1 text-xs rounded hover:bg-white/20 ${
+                        playbackRate === speed ? 'text-blue-400' : 'text-white'
+                      }`}
+                    >
+                      {speed}x
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             {/* Picture in Picture */}
             <Button
               variant="ghost"

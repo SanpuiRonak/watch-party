@@ -132,7 +132,7 @@ export default function Home() {
       <main className="min-h-screen bg-background">
         {/* Header - Top 50% */}
         <div className="h-[50vh] flex flex-col justify-between px-6 py-6">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-900 -mx-6 px-6 py-4 -mt-6">
             <div className="flex items-center gap-2">
               <span className="text-3xl">🎉</span>
               <h1 className="text-2xl font-bold">Watch Party</h1>

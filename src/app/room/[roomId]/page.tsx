@@ -136,7 +136,7 @@ export default function RoomPage({ params }: RoomPageProps) {
     <UserGuard>
       <div className="min-h-screen bg-background">
         {/* Full Width Header */}
-        <div className="w-screen bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="w-screen bg-gray-100 dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-gray-100/95 dark:supports-[backdrop-filter]:bg-gray-900/95">
           <div className="px-6 py-6">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
@@ -181,13 +181,13 @@ export default function RoomPage({ params }: RoomPageProps) {
               {/* Mobile Tabs - Only show on mobile */}
               <div className="mt-2 lg:hidden">
                 <Tabs defaultValue="participants" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="participants" className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Participants
+                  <TabsList className="flex w-full gap-0">
+                    <TabsTrigger value="participants" className="flex items-center gap-2 px-4 py-2">
+                      <Users className="h-5 w-5 flex-shrink-0" />
+                      Participants ({room.participants.length})
                     </TabsTrigger>
-                    <TabsTrigger value="settings" className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
+                    <TabsTrigger value="settings" className="flex items-center gap-2 px-4 py-2">
+                      <Settings className="h-5 w-5 flex-shrink-0" />
                       Room Settings
                     </TabsTrigger>
                   </TabsList>
@@ -208,16 +208,16 @@ export default function RoomPage({ params }: RoomPageProps) {
           </div>
 
           {/* Right Sidebar - Desktop Only */}
-          <div className="hidden lg:block w-80 bg-muted/30 border-l">
+          <div className="hidden lg:block w-80 bg-gray-50 dark:bg-gray-800">
             <div className="h-full p-4">
               <Tabs defaultValue="participants" className="w-full h-full flex flex-col">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="participants" className="flex items-center gap-2">
-                    <Users className="h-4 w-4" />
-                    Participants
+                <TabsList className="flex w-full gap-0">
+                  <TabsTrigger value="participants" className="flex items-center gap-2 px-4 py-2">
+                    <Users className="h-5 w-5 flex-shrink-0" />
+                    Participants ({room.participants.length})
                   </TabsTrigger>
-                  <TabsTrigger value="settings" className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
+                  <TabsTrigger value="settings" className="flex items-center gap-2 px-4 py-2">
+                    <Settings className="h-5 w-5 flex-shrink-0" />
                     Settings
                   </TabsTrigger>
                 </TabsList>
