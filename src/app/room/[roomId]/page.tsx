@@ -54,17 +54,34 @@ export default function RoomPage({ params }: RoomPageProps) {
           return res.json();
         })
         .then(roomData => {
-          if (roomData) {
+          if (roomData && user) {
             // Set room data in Redux while socket connects
             dispatch(setRoom(roomData));
+            
+            // Save to recent rooms if not owned by user
+            if (roomData.ownerId !== user.id) {
+              const recentRoom = {
+                id: roomData.id,
+                name: roomData.name,
+                streamUrl: roomData.streamUrl,
+                createdAt: roomData.createdAt,
+                accessedAt: Date.now(),
+                ownerId: roomData.ownerId,
+                ownerName: 'Unknown'
+              };
+              
+              const existingRecent = JSON.parse(localStorage.getItem(`recentRooms_${user.id}`) || '[]');
+              const updatedRecent = [recentRoom, ...existingRecent.filter((r: any) => r.id !== roomData.id)];
+              localStorage.setItem(`recentRooms_${user.id}`, JSON.stringify(updatedRecent.slice(0, 10)));
+            }
           }
         })
         .catch(() => router.push('/404'));
     }
-  }, [roomId, isAuthenticated, room, router]);
+  }, [roomId, isAuthenticated, room, router, dispatch, user]);
 
-  const handleUserSetupComplete = (username: string, avatar: string) => {
-    createUser(username, avatar);
+  const handleUserSetupComplete = (username: string) => {
+    createUser(username);
     setShowUserSetup(false);
   };
 

@@ -10,11 +10,20 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 export default function CreateRoom() {
   const router = useRouter();
   const { user } = useUser();
+  const [roomName, setRoomName] = useState('');
   const [streamUrl, setStreamUrl] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [error, setError] = useState('');
 
   const handleCreateRoom = async () => {
+    if (!roomName.trim()) {
+      setError('Please enter a room name');
+      return;
+    }
+    if (roomName.length > 50) {
+      setError('Room name must be 50 characters or less');
+      return;
+    }
     if (!streamUrl.trim()) {
       setError('Please enter a stream URL');
       return;
@@ -28,6 +37,7 @@ export default function CreateRoom() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          roomName: roomName.trim(),
           streamUrl: streamUrl,
           ownerId: user?.id,
         }),
@@ -35,6 +45,23 @@ export default function CreateRoom() {
 
       if (response.ok) {
         const data = await response.json();
+        
+        // Save to user's created rooms
+        if (user) {
+          const roomData = {
+            id: data.roomId,
+            name: roomName.trim(),
+            streamUrl,
+            createdAt: Date.now(),
+            ownerId: user.id,
+            ownerName: user.username
+          };
+          
+          const existingRooms = JSON.parse(localStorage.getItem(`myRooms_${user.id}`) || '[]');
+          const updatedRooms = [roomData, ...existingRooms.filter((r: any) => r.id !== data.roomId)];
+          localStorage.setItem(`myRooms_${user.id}`, JSON.stringify(updatedRooms.slice(0, 10)));
+        }
+        
         router.push(`/room/${data.roomId}`);
       } else {
         const errorData = await response.text();
@@ -60,6 +87,21 @@ export default function CreateRoom() {
         </div>
         
         <div className="space-y-4">
+          <div>
+            <label className="text-sm font-medium">Room Name</label>
+            <Input
+              type="text"
+              placeholder="My Watch Party"
+              value={roomName}
+              onChange={(e) => setRoomName(e.target.value)}
+              maxLength={50}
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Give your room a memorable name (max 50 characters)
+            </p>
+          </div>
+          
           <div>
             <label className="text-sm font-medium">Stream URL</label>
             <Input

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
 import { setUser } from '@/lib/store/slices/userSlice';
-import { loadUser, saveUser, generateUsername, generateAvatar } from '@/lib/utils/userStorage';
+import { loadUser, saveUser, generateUsername } from '@/lib/utils/userStorage';
 import { User } from '@/lib/types';
 
 export const useUser = () => {
@@ -17,11 +17,10 @@ export const useUser = () => {
     }
   }, [dispatch]);
 
-  const createUser = (username?: string, avatar?: string): User => {
+  const createUser = (username?: string): User => {
     const newUser: User = {
       id: crypto.randomUUID(),
       username: username || generateUsername(),
-      avatar: avatar || generateAvatar(),
     };
     
     dispatch(setUser(newUser));

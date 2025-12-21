@@ -6,7 +6,7 @@ import { RoomManager } from './src/lib/services/roomManager';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = process.env.PORT || 3000;
+const port = parseInt(process.env.PORT || '3000');
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
@@ -58,7 +58,7 @@ app.prepare().then(() => {
         console.log(`User ${userId} left room ${roomId}`);
       } catch (error) {
         console.error('Error leaving room:', error);
-      }``
+      }
     });
 
     socket.on('video-event', async (roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number) => {

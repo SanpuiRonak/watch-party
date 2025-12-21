@@ -56,4 +56,9 @@
   body {
     @apply bg-background text-foreground;
   }
+  
+  /* Prevent white flash on load */
+  html {
+    background-color: #000000;
+  }
 }

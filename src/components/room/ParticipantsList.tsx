@@ -1,6 +1,6 @@
 'use client';
 
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { UserAvatar } from '@/components/ui/user-avatar';
 import { Crown, Users } from 'lucide-react';
 import { useAppSelector } from '@/lib/store';
 
@@ -24,11 +24,10 @@ export function ParticipantsList() {
           
           return (
             <div key={participantId} className="flex items-center space-x-3">
-              <Avatar className="h-8 w-8">
-                <AvatarFallback className={isCurrentUser ? currentUser.avatar : 'bg-gray-500'}>
-                  {isCurrentUser ? currentUser.username.slice(0, 2).toUpperCase() : 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <UserAvatar 
+                username={isCurrentUser ? currentUser.username : `User${participantId.slice(0, 8)}`} 
+                size="md" 
+              />
               
               <div className="flex-1">
                 <div className="flex items-center space-x-2">

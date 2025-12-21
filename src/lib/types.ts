@@ -1,7 +1,6 @@
 export interface User {
   id: string;
   username: string;
-  avatar: string;
 }
 
 export interface VideoState {
@@ -18,6 +17,7 @@ export interface RoomPermissions {
 
 export interface Room {
   id: string;
+  name: string;
   ownerId: string;
   streamUrl: string;
   videoState: VideoState;
@@ -27,6 +27,7 @@ export interface Room {
 }
 
 export interface CreateRoomRequest {
+  roomName: string;
   streamUrl: string;
   ownerId: string;
 }
