@@ -19,6 +19,7 @@ export const useSocket = (roomId: string, userId: string, username: string) => {
 
     socket.on('room-state', (room: Room) => {
       console.log('Received room state update:', room.participants.length, 'participants:', room.participants.map(p => p.username));
+      console.log('Room permissions:', room.permissions);
       dispatch(setRoom(room));
       dispatch(setConnected(true));
     });
@@ -35,11 +36,6 @@ export const useSocket = (roomId: string, userId: string, username: string) => {
     socket.on('participant-left', (participant: { id: string; username: string }) => {
       console.log('Participant left:', participant);
       // Room state will be updated by the server automatically
-    });
-
-    socket.on('permissions-updated', (permissions: RoomPermissions) => {
-      // Refresh room state when permissions change
-      socket.emit('join-room', roomId, userId, username);
     });
 
     socket.on('error', (message: string) => {
@@ -60,7 +56,6 @@ export const useSocket = (roomId: string, userId: string, username: string) => {
       socket.off('video-sync');
       socket.off('participant-joined');
       socket.off('participant-left');
-      socket.off('permissions-updated');
       socket.off('error');
       socket.off('connect');
       socket.off('disconnect');
@@ -69,12 +64,14 @@ export const useSocket = (roomId: string, userId: string, username: string) => {
   }, [roomId, userId, username, dispatch]);
 
   const emitVideoEvent = (eventType: 'play' | 'pause' | 'seek', currentTime: number) => {
+    console.log('[useSocket] Emitting video event:', eventType, 'userId:', userId);
     if (socketRef.current) {
-      socketRef.current.emit('video-event', roomId, eventType, currentTime);
+      socketRef.current.emit('video-event', roomId, eventType, currentTime, userId);
     }
   };
 
   const emitPermissionsUpdate = (permissions: RoomPermissions) => {
+    console.log('[useSocket] Emitting permissions update:', permissions);
     if (socketRef.current) {
       socketRef.current.emit('permissions-update', roomId, permissions);
     }

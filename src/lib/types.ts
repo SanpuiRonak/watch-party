@@ -13,6 +13,7 @@ export interface VideoState {
 export interface RoomPermissions {
   canPlay: boolean;
   canSeek: boolean;
+  canChangeSpeed: boolean;
 }
 
 export interface Participant {

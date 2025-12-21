@@ -67,13 +67,20 @@ export class RoomManager {
     }
   }
 
-  async updatePermissions(roomId: string, permissions: { canPlay: boolean; canSeek: boolean }): Promise<Room | null> {
+  async updatePermissions(roomId: string, permissions: { canPlay: boolean; canSeek: boolean; canChangeSpeed: boolean }): Promise<Room | null> {
     try {
+      console.log('[RoomManager] Updating permissions for room:', roomId, permissions);
       const room = await this.getRoom(roomId);
-      if (!room) return null;
+      if (!room) {
+        console.log('[RoomManager] Room not found:', roomId);
+        return null;
+      }
 
+      console.log('[RoomManager] Current permissions:', room.permissions);
       room.permissions = permissions;
+      console.log('[RoomManager] New permissions:', room.permissions);
       await this.updateRoom(room);
+      console.log('[RoomManager] Room updated successfully');
       return room;
     } catch (error) {
       console.error('Error updating permissions:', error);

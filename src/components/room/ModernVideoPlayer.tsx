@@ -26,7 +26,9 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   
   const serverVideoState = useAppSelector(state => state.room.serverVideoState);
   const room = useAppSelector(state => state.room.currentRoom);
+  const user = useAppSelector(state => state.user.currentUser);
   const isConnected = useAppSelector(state => state.room.isConnected);
+  const isOwner = user?.id === room?.ownerId;
 
   // Sync with server video state
   useEffect(() => {
@@ -48,21 +50,31 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   }, [serverVideoState, isUserAction]);
 
   const handlePlay = () => {
-    if (!canControl || !room?.permissions.canPlay || !videoRef.current) return;
+    console.log('[VideoPlayer] handlePlay called, isOwner:', isOwner, 'canPlay:', room?.permissions.canPlay);
+    if (!canControl || (!isOwner && !room?.permissions.canPlay) || !videoRef.current) {
+      console.log('[VideoPlayer] handlePlay blocked - canControl:', canControl, 'isOwner:', isOwner, 'canPlay:', room?.permissions.canPlay, 'videoRef:', !!videoRef.current);
+      return;
+    }
+    console.log('[VideoPlayer] handlePlay proceeding - calling onVideoEvent');
     setIsUserAction(true);
     onVideoEvent('play', videoRef.current.currentTime);
     setTimeout(() => setIsUserAction(false), 100);
   };
 
   const handlePause = () => {
-    if (!canControl || !room?.permissions.canPlay || !videoRef.current) return;
+    console.log('[VideoPlayer] handlePause called, isOwner:', isOwner, 'canPlay:', room?.permissions.canPlay);
+    if (!canControl || (!isOwner && !room?.permissions.canPlay) || !videoRef.current) {
+      console.log('[VideoPlayer] handlePause blocked - canControl:', canControl, 'isOwner:', isOwner, 'canPlay:', room?.permissions.canPlay, 'videoRef:', !!videoRef.current);
+      return;
+    }
+    console.log('[VideoPlayer] handlePause proceeding - calling onVideoEvent');
     setIsUserAction(true);
     onVideoEvent('pause', videoRef.current.currentTime);
     setTimeout(() => setIsUserAction(false), 100);
   };
 
   const handleSeek = (time: number) => {
-    if (!canControl || !room?.permissions.canSeek || !videoRef.current) return;
+    if (!canControl || (!isOwner && !room?.permissions.canSeek) || !videoRef.current) return;
     setIsUserAction(true);
     videoRef.current.currentTime = time;
     onVideoEvent('seek', time);
@@ -70,7 +82,7 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   };
 
   const handleSeeked = () => {
-    if (!canControl || !room?.permissions.canSeek || !videoRef.current || isUserAction) return;
+    if (!canControl || (!isOwner && !room?.permissions.canSeek) || !videoRef.current || isUserAction) return;
     // Only emit seek event if it was a manual user action (not from sync)
     setIsUserAction(true);
     onVideoEvent('seek', videoRef.current.currentTime);
@@ -78,7 +90,11 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   };
 
   const togglePlayPause = () => {
-    if (!videoRef.current) return;
+    console.log('[VideoPlayer] togglePlayPause called, canPlay:', room?.permissions.canPlay, 'isOwner:', isOwner);
+    if (!videoRef.current || (!isOwner && !room?.permissions.canPlay)) {
+      console.log('[VideoPlayer] togglePlayPause blocked - no permission or no video ref');
+      return;
+    }
     if (videoRef.current.paused) {
       handlePlay();
     } else {
@@ -128,7 +144,7 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   };
 
   const handlePlaybackRateChange = (rate: number) => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || (!isOwner && !room?.permissions.canChangeSpeed)) return;
     videoRef.current.playbackRate = rate;
     setPlaybackRate(rate);
     setShowSpeedMenu(false);
@@ -161,14 +177,16 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
       <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
         {/* Progress Bar */}
         <div className="mb-4">
-          <Slider
-            value={[currentTime]}
-            max={duration || 100}
-            step={1}
-            onValueChange={(value) => room?.permissions.canSeek && handleSeek(value[0])}
-            className="w-full"
-            disabled={!room?.permissions.canSeek}
-          />
+          <div title={!isOwner && !room?.permissions.canSeek ? "Seeking disabled by owner" : ""}>
+            <Slider
+              value={[currentTime]}
+              max={duration || 100}
+              step={1}
+              onValueChange={(value) => (isOwner || room?.permissions.canSeek) && handleSeek(value[0])}
+              className="w-full"
+              disabled={!isOwner && !room?.permissions.canSeek}
+            />
+          </div>
         </div>
         
         {/* Controls Row */}
@@ -179,8 +197,9 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
               variant="ghost"
               size="sm"
               onClick={togglePlayPause}
-              disabled={!room?.permissions.canPlay}
+              disabled={!isOwner && !room?.permissions.canPlay}
               className="text-white hover:bg-white/20"
+              title={!isOwner && !room?.permissions.canPlay ? "Play/Pause disabled by owner" : ""}
             >
               {isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
             </Button>
@@ -216,12 +235,14 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowSpeedMenu(!showSpeedMenu)}
+                onClick={() => (isOwner || room?.permissions.canChangeSpeed) && setShowSpeedMenu(!showSpeedMenu)}
+                disabled={!isOwner && !room?.permissions.canChangeSpeed}
                 className="text-white hover:bg-white/20 text-xs px-2"
+                title={!isOwner && !room?.permissions.canChangeSpeed ? "Playback speed control disabled by owner" : ""}
               >
                 {playbackRate}x
               </Button>
-              {showSpeedMenu && (
+              {showSpeedMenu && room?.permissions.canChangeSpeed && (
                 <div className="absolute bottom-full mb-2 right-0 bg-black/90 rounded-md p-2 min-w-16">
                   {speedOptions.map((speed) => (
                     <button

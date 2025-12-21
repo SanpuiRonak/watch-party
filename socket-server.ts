@@ -83,26 +83,55 @@ app.prepare().then(() => {
       }
     });
 
-    socket.on('video-event', async (roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number) => {
+    socket.on('video-event', async (roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number, userId: string) => {
       try {
+        console.log(`[SocketServer] Received video-event: ${eventType} from userId: ${userId} in room: ${roomId}`);
+        const room = await roomManager.getRoom(roomId);
+        if (!room) {
+          console.log(`[SocketServer] Room ${roomId} not found`);
+          socket.emit('error', 'Room not found');
+          return;
+        }
+
+        console.log(`[SocketServer] Room owner: ${room.ownerId}, Event user: ${userId}`);
+        // Check permissions - owners always have full control
+        const isOwner = room.ownerId === userId;
+        console.log(`[SocketServer] Is owner: ${isOwner}`);
+        if (!isOwner) {
+          if ((eventType === 'play' || eventType === 'pause') && !room.permissions.canPlay) {
+            console.log(`User ${userId} denied ${eventType} - no permission`);
+            return;
+          }
+          if (eventType === 'seek' && !room.permissions.canSeek) {
+            console.log(`User ${userId} denied seek - no permission`);
+            return;
+          }
+        } else {
+          console.log(`Owner ${userId} performing ${eventType} - always allowed`);
+        }
+
         const videoState = await roomManager.updateVideoState(roomId, eventType, currentTime);
         
         if (videoState) {
           io.to(roomId).emit('video-sync', videoState);
-          console.log(`Video ${eventType} in room ${roomId} at ${currentTime}s`);
+          console.log(`Video ${eventType} in room ${roomId} at ${currentTime}s by user ${userId}`);
         }
       } catch (error) {
         console.error('Error handling video event:', error);
       }
     });
 
-    socket.on('permissions-update', async (roomId: string, permissions: { canPlay: boolean; canSeek: boolean }) => {
+    socket.on('permissions-update', async (roomId: string, permissions: { canPlay: boolean; canSeek: boolean; canChangeSpeed: boolean }) => {
       try {
+        console.log('[SocketServer] Received permissions update for room:', roomId, permissions);
         const updatedRoom = await roomManager.updatePermissions(roomId, permissions);
         
         if (updatedRoom) {
+          console.log('[SocketServer] Broadcasting room-state to room:', roomId);
           io.to(roomId).emit('room-state', updatedRoom);
           console.log(`Permissions updated in room ${roomId}:`, permissions);
+        } else {
+          console.log('[SocketServer] Failed to update permissions - room not found');
         }
       } catch (error) {
         console.error('Error updating permissions:', error);

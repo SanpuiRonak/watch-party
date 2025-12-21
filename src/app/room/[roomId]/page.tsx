@@ -33,6 +33,13 @@ export default function RoomPage({ params }: RoomPageProps) {
   const room = useAppSelector(state => state.room.currentRoom);
   const isConnected = useAppSelector(state => state.room.isConnected);
 
+  // Update document title
+  useEffect(() => {
+    if (room) {
+      document.title = `Watch Party | ${room.name}`;
+    }
+  }, [room]);
+
   const shareRoom = async () => {
     const shareUrl = `${window.location.origin}/room/${roomId}`;
     await navigator.clipboard.writeText(shareUrl);
@@ -124,6 +131,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   const handleUpdatePermissions = async (permissions: RoomPermissions) => {
     if (!user || !room) return;
     
+    console.log('[RoomPage] Updating permissions:', permissions);
     // Emit via socket for real-time updates
     emitPermissionsUpdate(permissions);
   };
@@ -131,6 +139,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   const isOwner = user.id === room.ownerId;
   const canPlay = room.permissions.canPlay;
   const canSeek = room.permissions.canSeek;
+  const canChangeSpeed = room.permissions.canChangeSpeed;
 
   return (
     <UserGuard>
@@ -175,7 +184,7 @@ export default function RoomPage({ params }: RoomPageProps) {
               <VideoPlayer
                 streamUrl={room.streamUrl}
                 onVideoEvent={emitVideoEvent}
-                canControl={canPlay || canSeek}
+                canControl={isOwner || canPlay || canSeek || canChangeSpeed}
               />
               
               {/* Mobile Tabs - Only show on mobile */}
@@ -197,10 +206,17 @@ export default function RoomPage({ params }: RoomPageProps) {
                   </TabsContent>
                   
                   <TabsContent value="settings" className="mt-4">
-                    <RoomSettings
-                      onUpdatePermissions={handleUpdatePermissions}
-                      isOwner={isOwner}
-                    />
+                    <div className={!isOwner ? 'pointer-events-none opacity-50' : ''}>
+                      <RoomSettings
+                        onUpdatePermissions={handleUpdatePermissions}
+                        isOwner={isOwner}
+                      />
+                    </div>
+                    {!isOwner && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-lg" title="Controls can only be updated by the room owner">
+                        <span className="sr-only">Controls can only be updated by the room owner</span>
+                      </div>
+                    )}
                   </TabsContent>
                 </Tabs>
               </div>
@@ -227,10 +243,17 @@ export default function RoomPage({ params }: RoomPageProps) {
                 </TabsContent>
                 
                 <TabsContent value="settings" className="mt-4 flex-1 overflow-hidden">
-                  <RoomSettings
-                    onUpdatePermissions={handleUpdatePermissions}
-                    isOwner={isOwner}
-                  />
+                  <div className={!isOwner ? 'pointer-events-none opacity-50' : ''}>
+                    <RoomSettings
+                      onUpdatePermissions={handleUpdatePermissions}
+                      isOwner={isOwner}
+                    />
+                  </div>
+                  {!isOwner && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-lg" title="Controls can only be updated by the room owner">
+                      <span className="sr-only">Controls can only be updated by the room owner</span>
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
             </div>

@@ -25,7 +25,8 @@ export async function POST(request: NextRequest) {
       },
       permissions: {
         canPlay: true,
-        canSeek: true
+        canSeek: true,
+        canChangeSpeed: true
       },
       participants: [{ id: ownerId, username: ownerName }],
       createdAt: Date.now()

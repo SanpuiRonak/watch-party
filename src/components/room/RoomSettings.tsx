@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Play, SkipForward } from 'lucide-react';
+import { Play, SkipForward, Gauge } from 'lucide-react';
 import { useAppSelector } from '@/lib/store';
 import { RoomPermissions } from '@/lib/types';
 
@@ -14,25 +14,47 @@ interface RoomSettingsProps {
 
 export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps) {
   const room = useAppSelector(state => state.room.currentRoom);
+  console.log('[RoomSettings] Component rendered, room permissions:', room?.permissions);
+  
   const [canPlay, setCanPlay] = useState(room?.permissions.canPlay ?? true);
   const [canSeek, setCanSeek] = useState(room?.permissions.canSeek ?? true);
+  const [canChangeSpeed, setCanChangeSpeed] = useState(room?.permissions.canChangeSpeed ?? true);
   const [hasChanges, setHasChanges] = useState(false);
-
-  const originalCanPlay = room?.permissions.canPlay ?? true;
-  const originalCanSeek = room?.permissions.canSeek ?? true;
 
   // Update local state when room permissions change via socket
   useEffect(() => {
-    setCanPlay(room?.permissions.canPlay ?? true);
-    setCanSeek(room?.permissions.canSeek ?? true);
-  }, [room?.permissions]);
+    if (room?.permissions && !hasChanges) {
+      console.log('[RoomSettings] Room permissions changed, updating local state:', room.permissions);
+      setCanPlay(room.permissions.canPlay);
+      setCanSeek(room.permissions.canSeek);
+      setCanChangeSpeed(room.permissions.canChangeSpeed ?? true);
+    }
+  }, [room?.permissions, hasChanges]);
 
   useEffect(() => {
-    setHasChanges(canPlay !== originalCanPlay || canSeek !== originalCanSeek);
-  }, [canPlay, canSeek, originalCanPlay, originalCanSeek]);
+    if (room?.permissions) {
+      const roomCanChangeSpeed = room.permissions.canChangeSpeed ?? true;
+      const hasChangesValue = (
+        canPlay !== room.permissions.canPlay || 
+        canSeek !== room.permissions.canSeek ||
+        canChangeSpeed !== roomCanChangeSpeed
+      );
+      console.log('[RoomSettings] Checking for changes:', {
+        current: { canPlay, canSeek, canChangeSpeed },
+        room: { 
+          canPlay: room.permissions.canPlay, 
+          canSeek: room.permissions.canSeek, 
+          canChangeSpeed: roomCanChangeSpeed 
+        },
+        hasChanges: hasChangesValue
+      });
+      setHasChanges(hasChangesValue);
+    }
+  }, [canPlay, canSeek, canChangeSpeed, room?.permissions]);
 
   const handleSave = () => {
-    onUpdatePermissions({ canPlay, canSeek });
+    console.log('[RoomSettings] Saving permissions:', { canPlay, canSeek, canChangeSpeed });
+    onUpdatePermissions({ canPlay, canSeek, canChangeSpeed });
     setHasChanges(false);
   };
 
@@ -46,7 +68,7 @@ export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps
               <span>Allow viewers to play/pause</span>
             </div>
             <Switch
-              checked={originalCanPlay}
+              checked={room?.permissions.canPlay ?? true}
               disabled
             />
           </div>
@@ -57,7 +79,18 @@ export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps
               <span>Allow viewers to seek</span>
             </div>
             <Switch
-              checked={originalCanSeek}
+              checked={room?.permissions.canSeek ?? true}
+              disabled
+            />
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Gauge className="h-4 w-4" />
+              <span>Allow viewers to change speed</span>
+            </div>
+            <Switch
+              checked={room?.permissions.canChangeSpeed ?? true}
               disabled
             />
           </div>
@@ -76,7 +109,10 @@ export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps
           </div>
           <Switch
             checked={canPlay}
-            onCheckedChange={setCanPlay}
+            onCheckedChange={(checked) => {
+              console.log('[RoomSettings] canPlay changed to:', checked);
+              setCanPlay(checked);
+            }}
           />
         </div>
         
@@ -90,11 +126,25 @@ export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps
             onCheckedChange={setCanSeek}
           />
         </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Gauge className="h-4 w-4" />
+            <span>Allow viewers to change speed</span>
+          </div>
+          <Switch
+            checked={canChangeSpeed}
+            onCheckedChange={setCanChangeSpeed}
+          />
+        </div>
       </div>
       
       <div className="mt-auto pt-4">
         <Button 
-          onClick={handleSave} 
+          onClick={() => {
+            console.log('[RoomSettings] Apply button clicked, hasChanges:', hasChanges);
+            handleSave();
+          }} 
           className="w-full" 
           disabled={!hasChanges}
         >
