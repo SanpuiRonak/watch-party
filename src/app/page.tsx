@@ -158,7 +158,7 @@ export default function Home() {
           </div>
           <div className="flex-1 flex items-center justify-center text-center">
             <div>
-              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with friends around the world!</h2>
+              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with your friends around the world!</h2>
               <div className="text-lg text-muted-foreground space-y-2">
                 <p>Use <Button onClick={handleCreateRoom} size="sm" className="mx-1"><Plus className="h-4 w-4 mr-1" />Create Room</Button> to start watching together with your friends</p>
                 <p className="text-center font-medium">OR</p>

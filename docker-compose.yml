@@ -9,7 +9,7 @@ services:
       - "3000"
     environment:
       - NODE_ENV=production
-      - MONGODB_URI=mongodb://mongodb:27017
+      - MONGODB_URI=mongodb://${MONGO_USER:-admin}:${MONGO_PASSWORD:-changeme}@mongodb:27017/watchparty?authSource=admin
       - MONGODB_DB=watchparty
     depends_on:
       - mongodb
@@ -19,11 +19,14 @@ services:
   mongodb:
     image: mongo:7
     environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_USER:-admin}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_PASSWORD:-changeme}
       - MONGO_INITDB_DATABASE=watchparty
     volumes:
       - mongo-data:/data/db
     networks:
       - watchparty-network
+    # Don't expose ports in production - only accessible via internal network
 
 volumes:
   mongo-data:

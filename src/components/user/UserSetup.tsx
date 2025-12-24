@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { generateUsername } from '@/lib/utils/userStorage';
+import { sanitizeUsername } from '@/lib/utils/security';
 import { RefreshCw } from 'lucide-react';
 
 interface UserSetupProps {
@@ -23,9 +24,17 @@ export function UserSetup({ open, onComplete }: UserSetupProps) {
   };
 
   const handleConfirm = () => {
-    const trimmedUsername = username.trim().slice(0, 50);
-    onComplete(trimmedUsername);
-    router.push('/');
+    try {
+      // Sanitize username to prevent XSS attacks
+      const sanitizedUsername = sanitizeUsername(username);
+      onComplete(sanitizedUsername);
+      router.push('/');
+    } catch (error) {
+      // If sanitization fails, generate a new safe username
+      console.error('Invalid username:', error);
+      const newUsername = generateUsername();
+      setUsername(newUsername);
+    }
   };
 
   return (

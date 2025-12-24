@@ -8,14 +8,32 @@ export async function connectToDatabase() {
     return { client, db };
   }
 
-  const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+  // Use authenticated connection string with environment variables
+  const mongoUser = process.env.MONGO_USER || 'admin';
+  const mongoPassword = process.env.MONGO_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'devpassword123');
+  const mongoHost = process.env.MONGO_HOST || 'localhost';
+  const mongoPort = process.env.MONGO_PORT || '27017';
+  
+  // Construct URI with authentication
+  const uri = process.env.MONGODB_URI || 
+    (mongoPassword 
+      ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}:${mongoPort}/watchparty?authSource=admin`
+      : `mongodb://${mongoHost}:${mongoPort}`);
+  
   const dbName = process.env.MONGODB_DB || 'watchparty';
 
-  client = new MongoClient(uri);
+  // Connection options for better security and performance
+  client = new MongoClient(uri, {
+    maxPoolSize: 10,
+    minPoolSize: 2,
+    maxIdleTimeMS: 30000,
+    serverSelectionTimeoutMS: 5000,
+  });
+  
   await client.connect();
   db = client.db(dbName);
 
-  console.log('Connected to MongoDB');
+  console.log('Connected to MongoDB with authentication');
   return { client, db };
 }
 

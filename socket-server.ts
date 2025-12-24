@@ -1,8 +1,21 @@
+// Load environment variables from .env file
+import 'dotenv/config';
+
 import { createServer } from 'http';
 import { parse } from 'url';
 import next from 'next';
 import { Server } from 'socket.io';
 import { RoomManager } from './src/lib/services/roomManager';
+import {
+  validateRoomId,
+  validateUserId,
+  sanitizeUsername,
+  validateVideoEventType,
+  validateCurrentTime,
+  validatePlaybackRate,
+  validatePermissions,
+  secureLogger
+} from './src/lib/utils/security';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -28,21 +41,26 @@ app.prepare().then(() => {
   const userRoomMap = new Map<string, { roomId: string; userId: string; username: string }>();
 
   io.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    secureLogger.info('Client connected:', socket.id);
 
-    socket.on('join-room', async (roomId: string, userId: string, username: string) => {
+    socket.on('join-room', async (roomId: unknown, userId: unknown, username: unknown) => {
       try {
+        // Validate and sanitize inputs to prevent NoSQL injection and XSS
+        const validRoomId = validateRoomId(roomId);
+        const validUserId = validateUserId(userId);
+        const validUsername = sanitizeUsername(username);
+
         // Check if user is already in the room to avoid duplicate joins
-        const existingRoom = await roomManager.getRoom(roomId);
-        if (existingRoom && existingRoom.participants.some(p => p.id === userId)) {
+        const existingRoom = await roomManager.getRoom(validRoomId);
+        if (existingRoom && existingRoom.participants.some(p => p.id === validUserId)) {
           // User already in room, just send current state
-          socket.join(roomId);
-          userRoomMap.set(socket.id, { roomId, userId, username });
+          socket.join(validRoomId);
+          userRoomMap.set(socket.id, { roomId: validRoomId, userId: validUserId, username: validUsername });
           socket.emit('room-state', existingRoom);
           return;
         }
 
-        const room = await roomManager.addParticipant(roomId, userId, username);
+        const room = await roomManager.addParticipant(validRoomId, validUserId, validUsername);
         
         if (!room) {
           socket.emit('error', 'Room not found');
@@ -50,96 +68,115 @@ app.prepare().then(() => {
         }
 
         // Store user-room mapping for disconnect handling
-        userRoomMap.set(socket.id, { roomId, userId, username });
-        console.log(`User ${username} (${userId}) joined room ${roomId}`);
+        userRoomMap.set(socket.id, { roomId: validRoomId, userId: validUserId, username: validUsername });
+        secureLogger.roomAction('User joined', validRoomId, validUserId);
 
-        socket.join(roomId);
+        socket.join(validRoomId);
         
         // Send updated room state to all participants in the room
-        io.to(roomId).emit('room-state', room);
+        io.to(validRoomId).emit('room-state', room);
         
       } catch (error) {
-        console.error('Error joining room:', error);
+        secureLogger.error('Error joining room:', error);
         socket.emit('error', 'Failed to join room');
       }
     });
 
-    socket.on('leave-room', async (roomId: string, userId: string, username: string) => {
+    socket.on('leave-room', async (roomId: unknown, userId: unknown, username: unknown) => {
       try {
-        await roomManager.removeParticipant(roomId, userId);
-        const updatedRoom = await roomManager.getRoom(roomId);
+        // Validate and sanitize inputs
+        const validRoomId = validateRoomId(roomId);
+        const validUserId = validateUserId(userId);
+        const validUsername = sanitizeUsername(username);
+
+        await roomManager.removeParticipant(validRoomId, validUserId);
+        const updatedRoom = await roomManager.getRoom(validRoomId);
         
-        socket.leave(roomId);
+        socket.leave(validRoomId);
         userRoomMap.delete(socket.id);
         
         if (updatedRoom) {
           // Broadcast updated room state to remaining participants
-          io.to(roomId).emit('room-state', updatedRoom);
+          io.to(validRoomId).emit('room-state', updatedRoom);
         }
         
-        console.log(`User ${username} (${userId}) left room ${roomId}`);
+        secureLogger.roomAction('User left', validRoomId, validUserId);
       } catch (error) {
-        console.error('Error leaving room:', error);
+        secureLogger.error('Error leaving room:', error);
       }
     });
 
-    socket.on('video-event', async (roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number, userId: string, playbackRate?: number) => {
+    socket.on('video-event', async (roomId: unknown, eventType: unknown, currentTime: unknown, userId: unknown, playbackRate?: unknown) => {
       try {
-        console.log(`[SocketServer] Received video-event: ${eventType} from userId: ${userId} in room: ${roomId}, playbackRate: ${playbackRate}`);
-        const room = await roomManager.getRoom(roomId);
+        // Validate and sanitize all inputs to prevent injection attacks
+        const validRoomId = validateRoomId(roomId);
+        const validEventType = validateVideoEventType(eventType);
+        const validCurrentTime = validateCurrentTime(currentTime);
+        const validUserId = validateUserId(userId);
+        const validPlaybackRate = validatePlaybackRate(playbackRate);
+
+        secureLogger.debug(`[SocketServer] Received video-event: ${validEventType} in room: ${validRoomId}, playbackRate: ${validPlaybackRate}`);
+        
+        const room = await roomManager.getRoom(validRoomId);
         if (!room) {
-          console.log(`[SocketServer] Room ${roomId} not found`);
+          secureLogger.debug(`[SocketServer] Room not found`);
           socket.emit('error', 'Room not found');
           return;
         }
 
-        console.log(`[SocketServer] Room owner: ${room.ownerId}, Event user: ${userId}`);
         // Check permissions - owners always have full control
-        const isOwner = room.ownerId === userId;
-        console.log(`[SocketServer] Is owner: ${isOwner}`);
+        const isOwner = room.ownerId === validUserId;
+        secureLogger.debug(`[SocketServer] Is owner: ${isOwner}`);
+        
         if (!isOwner) {
-          if ((eventType === 'play' || eventType === 'pause') && !room.permissions.canPlay) {
-            console.log(`User ${userId} denied ${eventType} - no permission`);
+          if ((validEventType === 'play' || validEventType === 'pause') && !room.permissions.canPlay) {
+            secureLogger.debug(`User denied ${validEventType} - no permission`);
             return;
           }
-          if (eventType === 'seek' && !room.permissions.canSeek) {
-            console.log(`User ${userId} denied seek - no permission`);
+          if (validEventType === 'seek' && !room.permissions.canSeek) {
+            secureLogger.debug(`User denied seek - no permission`);
             return;
           }
         } else {
-          console.log(`Owner ${userId} performing ${eventType} - always allowed`);
+          secureLogger.debug(`Owner performing ${validEventType} - always allowed`);
         }
 
-        const videoState = await roomManager.updateVideoState(roomId, eventType, currentTime, playbackRate || 1);
+        const videoState = await roomManager.updateVideoState(validRoomId, validEventType, validCurrentTime, validPlaybackRate);
         
         if (videoState) {
-          io.to(roomId).emit('video-sync', videoState);
-          console.log(`Video ${eventType} in room ${roomId} at ${currentTime}s by user ${userId}, rate: ${playbackRate || 1}x`);
+          io.to(validRoomId).emit('video-sync', videoState);
+          secureLogger.roomAction(`Video ${validEventType} at ${validCurrentTime}s, rate ${validPlaybackRate}x`, validRoomId, validUserId);
         }
       } catch (error) {
-        console.error('Error handling video event:', error);
+        secureLogger.error('Error handling video event:', error);
+        socket.emit('error', 'Invalid video event parameters');
       }
     });
 
-    socket.on('permissions-update', async (roomId: string, permissions: { canPlay: boolean; canSeek: boolean; canChangeSpeed: boolean }) => {
+    socket.on('permissions-update', async (roomId: unknown, permissions: unknown) => {
       try {
-        console.log('[SocketServer] Received permissions update for room:', roomId, permissions);
-        const updatedRoom = await roomManager.updatePermissions(roomId, permissions);
+        // Validate and sanitize inputs
+        const validRoomId = validateRoomId(roomId);
+        const validPermissions = validatePermissions(permissions);
+
+        secureLogger.debug('[SocketServer] Received permissions update for room:', validRoomId);
+        const updatedRoom = await roomManager.updatePermissions(validRoomId, validPermissions);
         
         if (updatedRoom) {
-          console.log('[SocketServer] Broadcasting room-state to room:', roomId);
-          io.to(roomId).emit('room-state', updatedRoom);
-          console.log(`Permissions updated in room ${roomId}:`, permissions);
+          secureLogger.debug('[SocketServer] Broadcasting room-state to room');
+          io.to(validRoomId).emit('room-state', updatedRoom);
+          secureLogger.roomAction('Permissions updated', validRoomId);
         } else {
-          console.log('[SocketServer] Failed to update permissions - room not found');
+          secureLogger.debug('[SocketServer] Failed to update permissions - room not found');
         }
       } catch (error) {
-        console.error('Error updating permissions:', error);
+        secureLogger.error('Error updating permissions:', error);
+        socket.emit('error', 'Invalid permissions parameters');
       }
     });
 
     socket.on('disconnect', async () => {
-      console.log('Client disconnected:', socket.id);
+      secureLogger.info('Client disconnected:', socket.id);
       
       // Handle unexpected disconnection
       const userRoom = userRoomMap.get(socket.id);
@@ -147,26 +184,26 @@ app.prepare().then(() => {
       if (userRoom) {
         const { roomId, userId, username } = userRoom;
         try {
-          console.log(`Removing participant ${username} from room ${roomId}`);
+          secureLogger.debug(`Removing participant from room`);
           await roomManager.removeParticipant(roomId, userId);
           const updatedRoom = await roomManager.getRoom(roomId);
           
           if (updatedRoom) {
-            console.log(`Broadcasting updated room state with ${updatedRoom.participants.length} participants`);
+            secureLogger.debug(`Broadcasting updated room state with ${updatedRoom.participants.length} participants`);
             // Broadcast updated room state to remaining participants
             io.to(roomId).emit('room-state', updatedRoom);
           }
           
           userRoomMap.delete(socket.id);
-          console.log(`User ${username} (${userId}) disconnected from room ${roomId}`);
+          secureLogger.roomAction('User disconnected', roomId, userId);
         } catch (error) {
-          console.error('Error handling disconnect:', error);
+          secureLogger.error('Error handling disconnect:', error);
         }
       }
     });
   });
 
   httpServer.listen(port, () => {
-    console.log(`> Socket server ready on http://${hostname}:${port}`);
+    secureLogger.info(`> Socket server ready on http://${hostname}:${port}`);
   });
 });
