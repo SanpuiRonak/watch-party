@@ -133,8 +133,8 @@ export default function Home() {
         <div className="h-[50vh] flex flex-col justify-between px-6 py-6">
           <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-900 -mx-6 px-6 py-4 -mt-6">
             <div className="flex items-center gap-2">
-              <span className="text-3xl">🎉</span>
               <h1 className="text-2xl font-bold">Watch Party</h1>
+              <span className="text-3xl">🎉</span>
             </div>
             <div className="flex items-center gap-4">
               {isAuthenticated && user && (
@@ -159,11 +159,6 @@ export default function Home() {
           <div className="flex-1 flex items-center justify-center text-center">
             <div>
               <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with your friends around the world!</h2>
-              <div className="text-lg text-muted-foreground space-y-2">
-                <p>Use <Button onClick={handleCreateRoom} size="sm" className="mx-1"><Plus className="h-4 w-4 mr-1" />Create Room</Button> to start watching together with your friends</p>
-                <p className="text-center font-medium">OR</p>
-                <p>Directly open the link shared by your friends or use the <Button onClick={handleJoinRoom} variant="outline" size="sm" className="mx-1"><Users className="h-4 w-4 mr-1" />Join Room</Button> button to join existing rooms!</p>
-              </div>
             </div>
           </div>
           <div></div>

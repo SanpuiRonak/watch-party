@@ -35,7 +35,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   // Update document title
   useEffect(() => {
     if (room) {
-      document.title = `Watch Party | ${room.name}`;
+      document.title = room.name;
     }
   }, [room]);
 
@@ -153,8 +153,8 @@ export default function RoomPage({ params }: RoomPageProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-                  <span className="text-3xl">🎉</span>
                   <h1 className="text-2xl font-bold">Watch Party</h1>
+                  <span className="text-3xl">🎉</span>
                 </div>
                 <div 
                   className="flex items-center gap-2 text-muted-foreground cursor-pointer hover:bg-accent/50 transition-colors rounded-lg p-2 -m-2" 
