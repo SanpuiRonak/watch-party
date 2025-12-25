@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { UserSetup } from '@/components/user/UserSetup';
 
-export default function SetupPage() {
+function SetupContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [showSetup, setShowSetup] = useState(true);
@@ -12,7 +12,7 @@ export default function SetupPage() {
   const handleComplete = (user: { id: string; username: string }) => {
     // User is set via Redux in UserSetup, cookie is set by API
     setShowSetup(false);
-    
+
     // Redirect to return URL or home
     const returnUrl = searchParams.get('returnUrl');
     router.push(returnUrl || '/');
@@ -28,5 +28,13 @@ export default function SetupPage() {
         <UserSetup open={showSetup} onComplete={handleComplete} />
       </div>
     </div>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SetupContent />
+    </Suspense>
   );
 }
