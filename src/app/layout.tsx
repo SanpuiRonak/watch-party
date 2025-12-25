@@ -8,6 +8,7 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000'),
   title: 'Watch Party',
   description: 'Watch videos together in sync with your friends!',
   icons: {
