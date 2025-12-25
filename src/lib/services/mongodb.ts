@@ -10,17 +10,18 @@ export async function connectToDatabase() {
 
   // Use authenticated connection string with environment variables
   const mongoUser = process.env.MONGO_USER || 'admin';
-  const mongoPassword = process.env.MONGO_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : 'devpassword123');
+  const mongoPassword = process.env.MONGO_PASSWORD || (process.env.NODE_ENV === 'production' ? '' : '');
   const mongoHost = process.env.MONGO_HOST || 'localhost';
   const mongoPort = process.env.MONGO_PORT || '27017';
-  
-  // Construct URI with authentication
-  const uri = process.env.MONGODB_URI || 
-    (mongoPassword 
-      ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}:${mongoPort}/watchparty?authSource=admin`
-      : `mongodb://${mongoHost}:${mongoPort}`);
-  
   const dbName = process.env.MONGODB_DB || 'watchparty';
+
+  // Construct URI with authentication from individual components
+  const uri = mongoPassword
+    ? `mongodb://${mongoUser}:${mongoPassword}@${mongoHost}:${mongoPort}/${dbName}?authSource=admin`
+    : `mongodb://${mongoHost}:${mongoPort}`;
+
+
+  console.log('Connecting to MongoDB with URI:', uri);
 
   // Connection options for better security and performance
   client = new MongoClient(uri, {
