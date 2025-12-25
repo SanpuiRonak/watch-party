@@ -6,14 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { generateUsername } from '@/lib/utils/userStorage';
-import { useUser } from '@/hooks/useUser';
+import { useAppDispatch } from '@/lib/store';
+import { setUser } from '@/lib/store/slices/userSlice';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function UserPage() {
   const router = useRouter();
-  const { createUser } = useUser();
+  const dispatch = useAppDispatch();
   const [username, setUsername] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   // Initialize username on client side to prevent hydration mismatch
   useEffect(() => {
@@ -24,13 +27,43 @@ export default function UserPage() {
     setUsername(generateUsername());
   };
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     const trimmedUsername = username.trim().slice(0, 50);
-    createUser(trimmedUsername);
     
-    // Redirect to original page or home
-    const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || '/';
-    router.replace(returnUrl);
+    if (!trimmedUsername) {
+      toast.error('Please enter a username');
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/auth/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: trimmedUsername }),
+        credentials: 'include', // Important for cookies
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to create user');
+      }
+      
+      const user = await response.json();
+      
+      // Set user in Redux store
+      dispatch(setUser(user));
+      
+      // Redirect to original page or home
+      const returnUrl = new URLSearchParams(window.location.search).get('returnUrl') || '/';
+      router.replace(returnUrl);
+    } catch (error) {
+      console.error('Failed to create user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create user');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -65,8 +98,8 @@ export default function UserPage() {
             </Button>
           </div>
           
-          <Button onClick={handleComplete} className="w-full">
-            Continue
+          <Button onClick={handleComplete} className="w-full" disabled={isLoading || !username.trim()}>
+            {isLoading ? 'Creating user...' : 'Continue'}
           </Button>
         </div>
       </div>

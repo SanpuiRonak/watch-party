@@ -1,37 +1,55 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '@/lib/store';
-import { setUser } from '@/lib/store/slices/userSlice';
-import { loadUser, saveUser, generateUsername } from '@/lib/utils/userStorage';
+import { setUser, clearUser } from '@/lib/store/slices/userSlice';
 import { User } from '@/lib/types';
 
 export const useUser = () => {
   const dispatch = useAppDispatch();
   const { currentUser, isAuthenticated } = useAppSelector(state => state.user);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const storedUser = loadUser();
-    if (storedUser) {
-      dispatch(setUser(storedUser));
-    }
-  }, [dispatch]);
-
-  const createUser = (username?: string): User => {
-    const trimmedUsername = (username || generateUsername()).trim().slice(0, 50);
-    const newUser: User = {
-      id: crypto.randomUUID(),
-      username: trimmedUsername,
+    // Fetch session from API on mount (cookie-based authentication)
+    const fetchSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session', {
+          credentials: 'include', // Important: Include cookies
+        });
+        
+        if (response.ok) {
+          const { authenticated, user } = await response.json();
+          if (authenticated && user) {
+            dispatch(setUser(user));
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch session:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
-    dispatch(setUser(newUser));
-    saveUser(newUser);
-    return newUser;
+    fetchSession();
+  }, [dispatch]);
+
+  const logout = async () => {
+    try {
+      await fetch('/api/auth/delete-user', {
+        method: 'DELETE',
+        credentials: 'include', // Important: Include cookies
+      });
+      dispatch(clearUser());
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return {
     user: currentUser,
     isAuthenticated,
-    createUser,
+    isLoading,
+    logout,
   };
 };

@@ -25,7 +25,7 @@ interface RoomPageProps {
 export default function RoomPage({ params }: RoomPageProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated, createUser } = useUser();
+  const { user, isAuthenticated } = useUser();
   const [roomId, setRoomId] = useState<string>('');
   const [showUserSetup, setShowUserSetup] = useState(false);
   
@@ -99,8 +99,8 @@ export default function RoomPage({ params }: RoomPageProps) {
     }
   }, [roomId, isAuthenticated, room, router, dispatch, user]);
 
-  const handleUserSetupComplete = (username: string) => {
-    createUser(username);
+  const handleUserSetupComplete = (user: { id: string; username: string }) => {
+    // User is set via Redux in UserSetup, cookie is set by API
     setShowUserSetup(false);
   };
 

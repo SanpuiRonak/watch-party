@@ -23,7 +23,7 @@ interface Room {
 
 export default function Home() {
   const router = useRouter();
-  const { user, isAuthenticated, createUser } = useUser();
+  const { user, isAuthenticated } = useUser();
   const [showUserSetup, setShowUserSetup] = useState(false);
   const [pendingAction, setPendingAction] = useState<'create' | 'join' | null>(null);
   const [myRooms, setMyRooms] = useState<Room[]>([]);
@@ -52,8 +52,9 @@ export default function Home() {
     }
   };
 
-  const handleUserSetupComplete = (username: string) => {
-    createUser(username);
+  const handleUserSetupComplete = (user: { id: string; username: string }) => {
+    // User is already set via Redux in UserSetup component
+    // Cookie is set by API
     setShowUserSetup(false);
     
     if (pendingAction === 'create') {

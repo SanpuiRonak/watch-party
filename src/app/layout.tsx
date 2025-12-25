@@ -8,28 +8,30 @@ import { Toaster } from 'sonner';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Watch party',
+  title: 'Watch Party',
   description: 'Watch videos together in sync with your friends!',
   icons: {
     icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>',
   },
   openGraph: {
     title: 'Watch Party',
-    description: 'Watch videos together in sync with your friends!',
+    description: 'Watch videos together in sync with your friends! Real-time synchronized video viewing with friends.',
+    type: 'website',
+    siteName: 'Watch Party',
     images: [
       {
-        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>',
-        width: 100,
-        height: 100,
-        alt: 'Watch Party',
+        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="%23000"/><text x="50%" y="50%" font-size="400" text-anchor="middle" dominant-baseline="middle">🎉</text></svg>',
+        width: 1200,
+        height: 630,
+        alt: 'Watch Party - Watch videos together in sync!',
       },
     ],
   },
   twitter: {
-    card: 'summary',
+    card: 'summary_large_image',
     title: 'Watch Party',
-    description: 'Watch videos together in sync with your friends!',
-    images: ['data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>'],
+    description: 'Watch videos together in sync with your friends! Real-time synchronized video viewing.',
+    images: ['data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="%23000"/><text x="50%" y="50%" font-size="400" text-anchor="middle" dominant-baseline="middle">🎉</text></svg>'],
   },
 };
 

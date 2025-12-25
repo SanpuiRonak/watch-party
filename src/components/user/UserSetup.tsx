@@ -7,33 +7,52 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { generateUsername } from '@/lib/utils/userStorage';
-import { sanitizeUsername } from '@/lib/utils/security';
 import { RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface UserSetupProps {
   open: boolean;
-  onComplete: (username: string) => void;
+  onComplete: (user: { id: string; username: string }) => void;
 }
 
 export function UserSetup({ open, onComplete }: UserSetupProps) {
   const router = useRouter();
   const [username, setUsername] = useState(generateUsername());
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleRegenerateUsername = () => {
     setUsername(generateUsername());
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
+    if (isLoading) return;
+    
+    setIsLoading(true);
     try {
-      // Sanitize username to prevent XSS attacks
-      const sanitizedUsername = sanitizeUsername(username);
-      onComplete(sanitizedUsername);
+      // Call API to create user and set secure cookie
+      const response = await fetch('/api/auth/create-user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: username.trim() }),
+        credentials: 'include', // Important: Include cookies
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to create user');
+      }
+
+      const { user } = await response.json();
+      
+      // Cookie is automatically set by browser (httpOnly)
+      // Pass user data to parent component
+      onComplete(user);
+      toast.success('Welcome to Watch Party! 🎉');
       router.push('/');
     } catch (error) {
-      // If sanitization fails, generate a new safe username
-      console.error('Invalid username:', error);
-      const newUsername = generateUsername();
-      setUsername(newUsername);
+      console.error('Failed to create user:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create user. Please try again.');
+      setIsLoading(false);
     }
   };
 

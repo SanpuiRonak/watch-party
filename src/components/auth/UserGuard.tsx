@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { loadUser } from '@/lib/utils/userStorage';
+import { useUser } from '@/hooks/useUser';
 
 interface UserGuardProps {
   children: React.ReactNode;
@@ -10,24 +10,24 @@ interface UserGuardProps {
 
 export function UserGuard({ children }: UserGuardProps) {
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
+  const { isAuthenticated, isLoading } = useUser();
 
   useEffect(() => {
-    setIsClient(true);
-    const user = loadUser();
-    if (!user) {
+    // Only redirect after loading is complete
+    if (!isLoading && !isAuthenticated) {
       const currentPath = window.location.pathname + window.location.search;
-      router.push(`/user?returnUrl=${encodeURIComponent(currentPath)}`);
+      router.push(`/setup?returnUrl=${encodeURIComponent(currentPath)}`);
     }
-  }, [router]);
+  }, [isAuthenticated, isLoading, router]);
 
-  if (!isClient) {
-    return <>{children}</>; // Render children on server
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return <>{children}</>; // Render children while loading to prevent flash
   }
 
-  const user = loadUser();
-  if (!user) {
-    return null; // Prevent flash while redirecting
+  // Prevent rendering if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
   }
 
   return <>{children}</>;

@@ -1,99 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyToken, extractTokenFromHeader } from '@/lib/utils/jwt';
 import { authRateLimiter, checkRateLimit } from '@/lib/middleware/rateLimiter';
+import { getSessionFromRequest, destroySessionCookie } from '@/lib/utils/sessionManager';
+import { logger } from '@/lib/utils/logger';
+import { withErrorHandler, UnauthorizedError } from '@/lib/utils/errorHandler';
 
 /**
  * DELETE /api/auth/delete-user
  * 
  * Validates and acknowledges deletion of anonymous user identity.
- * 
- * In an anonymous system, this endpoint:
- * - Verifies the JWT token is valid
- * - Confirms the user identity can be cleared
- * - Actual deletion happens client-side (remove JWT from localStorage)
- * 
- * Headers:
- * Authorization: Bearer <jwt-token>
+ * Destroys the secure session cookie.
  * 
  * Response:
  * {
  *   "success": true,
- *   "message": "User identity cleared",
- *   "userId": string
+ *   "message": "User identity cleared"
  * }
  * 
  * Security:
  * - Rate limited: 10 requests per hour per IP
- * - JWT verification: Ensures valid token
- * 
- * TODO: Integrate with UI
- * 1. Add "Clear Identity" or "Logout" button in UI
- * 2. Call this endpoint with JWT from localStorage
- * 3. On success, remove JWT from localStorage
- * 4. Redirect to homepage or show "create user" flow
- * 5. Optionally: Add confirmation dialog before deletion
- * 
- * Future Enhancement:
- * - If user preferences/history is added to database, delete that data here
- * - Add ability to delete associated rooms created by user
- * - Add logging for analytics/security monitoring
+ * - Session validation: Requires valid cookie
+ * - Secure cookie destruction (Phase 3)
  */
-export async function DELETE(request: NextRequest) {
+export const DELETE = withErrorHandler(async (request: NextRequest) => {
+  // Rate limiting - prevent abuse
+  const clientIp = request.headers.get('x-forwarded-for') || 
+                   request.headers.get('x-real-ip') || 
+                   'unknown';
+  
   try {
-    // Rate limiting - prevent abuse
-    const clientIp = request.headers.get('x-forwarded-for') || 
-                     request.headers.get('x-real-ip') || 
-                     'unknown';
-    
-    try {
-      await checkRateLimit(authRateLimiter, clientIp);
-    } catch (error) {
-      return NextResponse.json(
-        { error: 'Too many requests. Please try again later.' },
-        { status: 429 }
-      );
-    }
-
-    // Extract JWT from Authorization header
-    const authHeader = request.headers.get('authorization');
-    const token = extractTokenFromHeader(authHeader);
-
-    if (!token) {
-      return NextResponse.json(
-        { error: 'Authorization token required' },
-        { status: 401 }
-      );
-    }
-
-    // Verify JWT token
-    let payload;
-    try {
-      payload = verifyToken(token);
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Invalid token';
-      return NextResponse.json(
-        { error: errorMessage },
-        { status: 401 }
-      );
-    }
-
-    // Token is valid - acknowledge deletion
-    // Note: In anonymous system, no database cleanup needed
-    // Client will remove JWT from localStorage
-    
-    console.log(`User identity cleared: ${payload.userId}`);
-
-    return NextResponse.json({
-      success: true,
-      message: 'User identity cleared',
-      userId: payload.userId,
-    }, { status: 200 });
-
+    await checkRateLimit(authRateLimiter, clientIp);
   } catch (error) {
-    console.error('Error deleting user:', error);
+    logger.rateLimitEvent(clientIp, 'delete_user', true);
     return NextResponse.json(
-      { error: 'Failed to delete user' },
-      { status: 500 }
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
     );
   }
-}
+
+  // Get session from cookie
+  const session = getSessionFromRequest(request);
+
+  if (!session) {
+    throw new UnauthorizedError('Authentication required');
+  }
+
+  // Create success response
+  const response = NextResponse.json({
+    success: true,
+    message: 'User identity cleared',
+  }, { status: 200 });
+
+  // Destroy the session cookie
+  destroySessionCookie(response);
+
+  logger.authEvent('logout', session.userId, 'User deleted account');
+
+  return response;
+}, 'DELETE /api/auth/delete-user');
