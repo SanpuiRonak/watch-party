@@ -9,13 +9,13 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'Watch party',
-  description: 'Watch videos together in sync with your friends around the world!',
+  description: 'Watch videos together in sync with your friends!',
   icons: {
     icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>',
   },
   openGraph: {
-    title: 'Watch party 🎉',
-    description: 'Watch videos together in sync with your friends around the world!',
+    title: 'Watch Party',
+    description: 'Watch videos together in sync with your friends!',
     images: [
       {
         url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>',
@@ -27,8 +27,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary',
-    title: 'Watch party 🎉',
-    description: 'Watch videos together in sync with your friends around the world!',
+    title: 'Watch Party',
+    description: 'Watch videos together in sync with your friends!',
     images: ['data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>'],
   },
 };

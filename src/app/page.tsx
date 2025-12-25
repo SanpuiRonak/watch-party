@@ -158,7 +158,7 @@ export default function Home() {
           </div>
           <div className="flex-1 flex items-center justify-center text-center">
             <div>
-              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with your friends around the world!</h2>
+              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with your friends!</h2>
             </div>
           </div>
           <div></div>

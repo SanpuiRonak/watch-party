@@ -19,7 +19,7 @@ import {
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
-const port = parseInt(process.env.PORT || '3000');
+const port = parseInt(process.env.SERVER_PORT || '3000');
 
 const app = next({ dev, hostname, port });
 const handle = app.getRequestHandler();
