@@ -20,7 +20,7 @@ export const metadata: Metadata = {
     siteName: 'Watch Party',
     images: [
       {
-        url: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="%23000"/><text x="50%" y="50%" font-size="400" text-anchor="middle" dominant-baseline="middle">🎉</text></svg>',
+        url: '/tada.png',
         width: 1200,
         height: 630,
         alt: 'Watch Party - Watch videos together in sync!',
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Watch Party',
     description: 'Watch videos together in sync with your friends! Real-time synchronized video viewing.',
-    images: ['data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630"><rect width="1200" height="630" fill="%23000"/><text x="50%" y="50%" font-size="400" text-anchor="middle" dominant-baseline="middle">🎉</text></svg>'],
+    images: ['/tada.png'],
   },
 };
 
