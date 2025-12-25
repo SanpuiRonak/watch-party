@@ -2,11 +2,14 @@ import jwt from 'jsonwebtoken';
 
 // Get JWT secret from environment or use a default for development
 const JWT_SECRET = process.env.JWT_SECRET || 'development-secret-change-in-production';
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 if (process.env.NODE_ENV === 'production' && JWT_SECRET === 'development-secret-change-in-production') {
   console.error('WARNING: Using default JWT secret in production! Set JWT_SECRET environment variable.');
 }
+
+// NOTE: JWT tokens do not expire for anonymous users
+// This is intentional because anonymous users cannot re-authenticate (no passwords)
+// If tokens expired, users would be permanently locked out of their accounts
 
 export interface JWTPayload {
   userId: string;
@@ -16,7 +19,7 @@ export interface JWTPayload {
 }
 
 /**
- * Generate a JWT token for a user
+ * Generate a JWT token for a user (no expiration for anonymous users)
  */
 export function generateToken(userId: string, username: string): string {
   try {
@@ -26,7 +29,6 @@ export function generateToken(userId: string, username: string): string {
     };
 
     return jwt.sign(payload, JWT_SECRET, {
-      expiresIn: JWT_EXPIRES_IN as string,
       issuer: 'watch-party',
       audience: 'watch-party-users',
     } as jwt.SignOptions);

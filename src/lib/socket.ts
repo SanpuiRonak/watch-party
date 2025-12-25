@@ -5,7 +5,7 @@ class SocketManager {
 
   connect(): Socket {
     if (!this.socket) {
-      this.socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000');
+      this.socket = io(process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000');
     }
     return this.socket;
   }
