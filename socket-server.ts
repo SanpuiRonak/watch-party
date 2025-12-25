@@ -16,6 +16,8 @@ import {
   validatePermissions,
   secureLogger
 } from './src/lib/utils/security';
+import { verifyToken, JWTPayload } from './src/lib/utils/jwt';
+import { socketRateLimiter, checkRateLimit } from './src/lib/middleware/rateLimiter';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = 'localhost';
@@ -30,10 +32,28 @@ app.prepare().then(() => {
     await handle(req, res, parsedUrl);
   });
 
+  // Define allowed origins based on environment
+  const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
+    ? (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean)
+    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
   const io = new Server(httpServer, {
     cors: {
-      origin: process.env.NODE_ENV === 'production' ? false : "http://localhost:3000",
-      methods: ["GET", "POST"]
+      origin: (origin, callback) => {
+        // Allow requests with no origin (mobile apps, curl, etc.) in development
+        if (!origin && process.env.NODE_ENV !== 'production') {
+          return callback(null, true);
+        }
+        
+        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+          callback(null, true);
+        } else {
+          secureLogger.error('CORS blocked origin:', origin);
+          callback(new Error('Not allowed by CORS'));
+        }
+      },
+      methods: ["GET", "POST"],
+      credentials: true
     }
   });
 
@@ -42,6 +62,19 @@ app.prepare().then(() => {
 
   io.on('connection', (socket) => {
     secureLogger.info('Client connected:', socket.id);
+
+    // Rate limiting middleware for socket events
+    socket.use(async (packet, next) => {
+      try {
+        const clientIp = socket.handshake.address;
+        await checkRateLimit(socketRateLimiter, clientIp);
+        next();
+      } catch (error) {
+        secureLogger.error('Rate limit exceeded for', socket.handshake.address);
+        socket.emit('error', 'Rate limit exceeded. Please slow down.');
+        // Don't call next() to block the event
+      }
+    });
 
     socket.on('join-room', async (roomId: unknown, userId: unknown, username: unknown) => {
       try {

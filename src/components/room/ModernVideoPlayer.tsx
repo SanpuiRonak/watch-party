@@ -31,7 +31,6 @@ export function VideoPlayer({ streamUrl, onVideoEvent, canControl }: VideoPlayer
   const isOwner = user?.id === room?.ownerId;
 
   // Sync playback rate
-  // TODO: Fix playback speed synchronization - currently not syncing properly across viewers
   useEffect(() => {
     if (!videoRef.current || !serverVideoState) return;
     const rate = serverVideoState.playbackRate || 1;
