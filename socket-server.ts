@@ -33,11 +33,8 @@ app.prepare().then(() => {
   });
 
   // Define allowed origins based on environment
-  // In production: use ALLOWED_ORIGINS if set, otherwise fall back to NEXT_PUBLIC_ORIGIN
-  // This allows simple single-origin setups to only configure NEXT_PUBLIC_ORIGIN
-  const defaultOrigin = process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000';
-  const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
-    ? (process.env.ALLOWED_ORIGINS || defaultOrigin).split(',').filter(Boolean)
+  const allowedOrigins = process.env.NODE_ENV === 'production'
+    ? [process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000']
     : ['http://localhost:3000', 'http://127.0.0.1:3000'];
 
   const io = new Server(httpServer, {
@@ -48,7 +45,7 @@ app.prepare().then(() => {
           return callback(null, true);
         }
         
-        if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+        if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
           secureLogger.error('CORS blocked origin:', origin);
