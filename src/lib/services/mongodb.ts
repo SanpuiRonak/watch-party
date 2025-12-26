@@ -1,5 +1,5 @@
 import { Db, MongoClient } from "mongodb";
-import { secureLogger } from "@/lib/utils/security";
+import { secureLogger } from "../utils/security";
 
 let client: MongoClient;
 let db: Db;

@@ -1,5 +1,5 @@
 import { RateLimiterMemory, RateLimiterRes } from "rate-limiter-flexible";
-import { secureLogger } from "@/lib/utils/security";
+import { secureLogger } from "../utils/security";
 
 // Rate limiter for Socket.io connections
 // 10 events per second per connection

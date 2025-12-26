@@ -1,5 +1,6 @@
 import { Participant, Room, RoomPermissions, VideoState } from "../types";
 import { connectToDatabase } from "./mongodb";
+import { Collection } from "mongodb";
 import {
     sanitizeRoomName,
     sanitizeUsername,
@@ -11,9 +12,9 @@ import {
 } from "../utils/security";
 
 export class RoomManager {
-    private async getCollection() {
+    private async getCollection(): Promise<Collection<Room>> {
         const { db } = await connectToDatabase();
-        return db.collection("rooms");
+        return db.collection<Room>("rooms");
     }
 
     async createRoom(
