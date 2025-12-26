@@ -22,6 +22,8 @@ export const UI_TEXT = {
     continue: "Continue",
     share: "Share",
     back: "Back",
+    updateUsername: "Update Username",
+    deleteUser: "Delete User",
 
     // Help Text
     roomNameHelp: "Give your room a memorable name (max 50 characters)",

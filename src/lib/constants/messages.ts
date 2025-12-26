@@ -3,6 +3,7 @@ export const MESSAGES = {
     welcome: "Welcome to Watch Party 🎉!",
     createUserPrompt: "Please create a user to get started",
     createProfilePrompt: "Create your profile to get started",
+    updateUserPrompt: "Update your username",
 
     // Success Messages
     copiedToClipboard: "Copied to clipboard!",
