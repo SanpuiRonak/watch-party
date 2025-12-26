@@ -9,5 +9,4 @@ docker-compose*.yml
 .env.local
 .env.example
 mongo-data
-redis-data
 *.log
