@@ -11,6 +11,7 @@ import { setUser } from '@/lib/store/slices/userSlice';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
+import { APP_CONFIG, MESSAGES, UI_TEXT } from '@/lib/constants';
 
 export default function UserPage() {
   const router = useRouter();
@@ -31,7 +32,7 @@ export default function UserPage() {
     const trimmedUsername = username.trim().slice(0, 50);
     
     if (!trimmedUsername) {
-      toast.error('Please enter a username');
+      toast.error(MESSAGES.usernameRequired);
       return;
     }
     
@@ -75,11 +76,11 @@ export default function UserPage() {
       {/* Top 1/3 - Title */}
       <div className="flex-1 flex items-end justify-center pb-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Welcome to <span className="text-4xl">🎉</span> Watch Party!</h1>
-          <p className="text-lg text-muted-foreground">Please create a user to get started</p>
+          <h1 className="text-4xl font-bold mb-4">{MESSAGES.welcome}</h1>
+          <p className="text-lg text-muted-foreground">{MESSAGES.createUserPrompt}</p>
         </div>
       </div>
-      
+
       {/* Center - Fields */}
       <div className="flex items-start justify-center pt-8">
         <div className="w-full max-w-md space-y-6">
@@ -90,16 +91,16 @@ export default function UserPage() {
             <Input
               value={username}
               onChange={(e) => setUsername(e.target.value.slice(0, 50))}
-              placeholder="Username"
+              placeholder={UI_TEXT.usernamePlaceholder}
               maxLength={50}
             />
             <Button variant="outline" size="icon" onClick={handleRegenerateUsername}>
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-          
+
           <Button onClick={handleComplete} className="w-full" disabled={isLoading || !username.trim()}>
-            {isLoading ? 'Creating user...' : 'Continue'}
+            {isLoading ? MESSAGES.creatingUser : UI_TEXT.continue}
           </Button>
         </div>
       </div>

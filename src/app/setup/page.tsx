@@ -3,6 +3,7 @@
 import { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { UserSetup } from '@/components/user/UserSetup';
+import { MESSAGES } from '@/lib/constants';
 
 function SetupContent() {
   const router = useRouter();
@@ -22,8 +23,8 @@ function SetupContent() {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome to Watch Party! 🎉</h1>
-          <p className="text-muted-foreground">Create your profile to get started</p>
+          <h1 className="text-3xl font-bold mb-2">{MESSAGES.welcome}</h1>
+          <p className="text-muted-foreground">{MESSAGES.createProfilePrompt}</p>
         </div>
         <UserSetup open={showSetup} onComplete={handleComplete} />
       </div>

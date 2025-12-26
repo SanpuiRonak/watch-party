@@ -4,35 +4,36 @@ import './globals.css';
 import { ReduxProvider } from '@/components/providers/ReduxProvider';
 import { ThemeProvider } from '@/components/providers/ThemeProvider';
 import { Toaster } from 'sonner';
+import { APP_CONFIG } from '@/lib/constants';
 
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000'),
-  title: 'Watch Party',
-  description: 'Watch videos together in sync with your friends!',
+  title: APP_CONFIG.name,
+  description: APP_CONFIG.description,
   icons: {
-    icon: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🎉</text></svg>',
+    icon: `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${APP_CONFIG.logo}</text></svg>`,
   },
   openGraph: {
-    title: 'Watch Party',
-    description: 'Watch videos together in sync with your friends! Real-time synchronized video viewing with friends.',
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
     type: 'website',
-    siteName: 'Watch Party',
+    siteName: APP_CONFIG.name,
     images: [
       {
-        url: '/tada.png',
+        url: '/tada.webp',
         width: 1200,
         height: 630,
-        alt: 'Watch Party - Watch videos together in sync!',
+        alt: APP_CONFIG.name,
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Watch Party',
-    description: 'Watch videos together in sync with your friends! Real-time synchronized video viewing.',
-    images: ['/tada.png'],
+    title: APP_CONFIG.name,
+    description: APP_CONFIG.description,
+    images: ['/tada.webp'],
   },
 };
 

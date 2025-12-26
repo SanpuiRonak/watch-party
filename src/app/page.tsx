@@ -10,6 +10,7 @@ import { UserAvatar } from '@/components/ui/user-avatar';
 import { UserGuard } from '@/components/auth/UserGuard';
 import { useUser } from '@/hooks/useUser';
 import { Users, Plus, Clock, User, Share, X } from 'lucide-react';
+import { APP_CONFIG, MESSAGES, UI_TEXT } from '@/lib/constants';
 
 interface Room {
   id: string;
@@ -134,8 +135,8 @@ export default function Home() {
         <div className="h-[50vh] flex flex-col justify-between px-6 py-6">
           <div className="flex items-center justify-between bg-gray-100 dark:bg-gray-900 -mx-6 px-6 py-4 -mt-6">
             <div className="flex items-center gap-2">
-              <h1 className="text-2xl font-bold">Watch Party</h1>
-              <span className="text-3xl">🎉</span>
+              <h1 className="text-2xl font-bold">{APP_CONFIG.name}</h1>
+              <span className="text-3xl">{APP_CONFIG.logo}</span>
             </div>
             <div className="flex items-center gap-4">
               {isAuthenticated && user && (
@@ -146,12 +147,12 @@ export default function Home() {
               <div className="flex gap-2">
                 <Button onClick={handleCreateRoom} size="sm" className="flex items-center gap-2">
                   <Plus className="h-4 w-4" />
-                  Create Room
+                  {UI_TEXT.createRoom}
                 </Button>
-                
+
                 <Button onClick={handleJoinRoom} variant="outline" size="sm" className="flex items-center gap-2">
                   <Users className="h-4 w-4" />
-                  Join Room
+                  {UI_TEXT.joinRoom}
                 </Button>
               </div>
               <ThemeToggle />
@@ -159,7 +160,7 @@ export default function Home() {
           </div>
           <div className="flex-1 flex items-center justify-center text-center">
             <div>
-              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">Watch videos together in sync with your friends!</h2>
+              <h2 className="text-2xl font-semibold text-muted-foreground mb-4">{APP_CONFIG.description}</h2>
             </div>
           </div>
           <div></div>
@@ -174,7 +175,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <User className="h-5 w-5" />
-                    <h2 className="text-xl font-semibold">Rooms Created by Me</h2>
+                    <h2 className="text-xl font-semibold">{UI_TEXT.roomsCreatedByMe}</h2>
                   </div>
                   {myRooms.length > 0 ? (
                     <div className="flex gap-4 overflow-x-auto pb-2">
@@ -204,7 +205,7 @@ export default function Home() {
                           </Button>
                           {copiedRoomId === room.id && (
                             <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
-                              Link copied!
+                              {MESSAGES.copiedToClipboard}
                             </div>
                           )}
                           <div className="flex flex-col h-full pr-12">
@@ -234,7 +235,7 @@ export default function Home() {
                     <div className="flex flex-col items-center justify-center h-32 gap-3">
                       <User className="h-12 w-12 text-muted-foreground/30" />
                       <p className="text-base text-muted-foreground text-center">
-                        Looks like you have not created any rooms yet. Please use <Button onClick={handleCreateRoom} size="sm" className="mx-1"><Plus className="h-4 w-4 mr-1" />Create Room</Button> to create a new room!
+                        {MESSAGES.noRoomsCreated}
                       </p>
                     </div>
                   )}
@@ -244,7 +245,7 @@ export default function Home() {
                 <div>
                   <div className="flex items-center gap-2 mb-4">
                     <Clock className="h-5 w-5" />
-                    <h2 className="text-xl font-semibold">Recent Rooms</h2>
+                    <h2 className="text-xl font-semibold">{UI_TEXT.recentRooms}</h2>
                   </div>
                   {recentRooms.length > 0 ? (
                   <div className="flex gap-4 overflow-x-auto pb-2">
@@ -274,7 +275,7 @@ export default function Home() {
                         </Button>
                         {copiedRoomId === room.id && (
                           <div className="absolute bottom-12 right-2 bg-black text-white text-xs px-2 py-1 rounded shadow-lg z-10">
-                            Link copied!
+                            {MESSAGES.copiedToClipboard}
                           </div>
                         )}
                         <div className="flex flex-col h-full pr-12">
@@ -304,7 +305,7 @@ export default function Home() {
                   <div className="flex flex-col items-center justify-center h-32 gap-3">
                     <Clock className="h-12 w-12 text-muted-foreground/30" />
                     <p className="text-base text-muted-foreground text-center">
-                      Looks like you haven't joined any rooms recently. Ask your friends for the room link to join their rooms!
+                      {MESSAGES.noRecentRooms}
                     </p>
                   </div>
                 )}

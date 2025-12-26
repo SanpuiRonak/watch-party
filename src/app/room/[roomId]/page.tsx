@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { Share, Settings, Users } from 'lucide-react';
 import { RoomPermissions } from '@/lib/types';
+import { APP_CONFIG, MESSAGES, UI_TEXT } from '@/lib/constants';
 
 interface RoomPageProps {
   params: Promise<{ roomId: string }>;
@@ -42,7 +43,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   const shareRoom = async () => {
     const shareUrl = `${window.location.origin}/room/${roomId}`;
     await navigator.clipboard.writeText(shareUrl);
-    toast.success('Room link copied to clipboard!');
+    toast.success(MESSAGES.copiedToClipboard);
   };
 
   useEffect(() => {
@@ -106,7 +107,7 @@ export default function RoomPage({ params }: RoomPageProps) {
 
   const copyRoomId = async () => {
     await navigator.clipboard.writeText(roomId);
-    toast.success('Room ID copied to clipboard!');
+    toast.success(MESSAGES.copiedToClipboard);
   };
 
   useEffect(() => {
@@ -125,7 +126,7 @@ export default function RoomPage({ params }: RoomPageProps) {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>Loading room...</p>
+          <p>{MESSAGES.loadingRoom}</p>
         </div>
       </div>
     );
@@ -153,25 +154,25 @@ export default function RoomPage({ params }: RoomPageProps) {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-                  <h1 className="text-2xl font-bold">Watch Party</h1>
-                  <span className="text-3xl">🎉</span>
+                  <h1 className="text-2xl font-bold">{APP_CONFIG.name}</h1>
+                  <span className="text-3xl">{APP_CONFIG.logo}</span>
                 </div>
-                <div 
-                  className="flex items-center gap-2 text-muted-foreground cursor-pointer hover:bg-accent/50 transition-colors rounded-lg p-2 -m-2" 
+                <div
+                  className="flex items-center gap-2 text-muted-foreground cursor-pointer hover:bg-accent/50 transition-colors rounded-lg p-2 -m-2"
                   onClick={shareRoom}
                 >
                   <span className="text-lg font-medium">{room.name}</span>
                   <Share className="h-4 w-4" />
                 </div>
               </div>
-              
+
               <div className="flex items-center gap-4">
                 <ThemeToggle />
-                
+
                 <div className="flex items-center space-x-2">
                   <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
                   <span className="text-sm text-muted-foreground">
-                    {isConnected ? 'Connected' : 'Disconnected'}
+                    {isConnected ? MESSAGES.connected : MESSAGES.disconnected}
                   </span>
                 </div>
               </div>
@@ -196,11 +197,11 @@ export default function RoomPage({ params }: RoomPageProps) {
                   <TabsList className="flex w-full gap-0">
                     <TabsTrigger value="participants" className="flex items-center gap-2 px-4 py-2">
                       <Users className="h-5 w-5 flex-shrink-0" />
-                      Participants ({room.participants.length})
+                      {UI_TEXT.participants} ({room.participants.length})
                     </TabsTrigger>
                     <TabsTrigger value="settings" className="flex items-center gap-2 px-4 py-2">
                       <Settings className="h-5 w-5 flex-shrink-0" />
-                      Room Settings
+                      {UI_TEXT.roomSettings}
                     </TabsTrigger>
                   </TabsList>
                   
@@ -233,11 +234,11 @@ export default function RoomPage({ params }: RoomPageProps) {
                 <TabsList className="flex w-full gap-0">
                   <TabsTrigger value="participants" className="flex items-center gap-2 px-4 py-2">
                     <Users className="h-5 w-5 flex-shrink-0" />
-                    Participants ({room.participants.length})
+                    {UI_TEXT.participants} ({room.participants.length})
                   </TabsTrigger>
                   <TabsTrigger value="settings" className="flex items-center gap-2 px-4 py-2">
                     <Settings className="h-5 w-5 flex-shrink-0" />
-                    Settings
+                    {UI_TEXT.settings}
                   </TabsTrigger>
                 </TabsList>
                 

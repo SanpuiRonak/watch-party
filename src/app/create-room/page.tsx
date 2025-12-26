@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { UserGuard } from '@/components/auth/UserGuard';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Loader2 } from 'lucide-react';
+import { APP_CONFIG, MESSAGES, UI_TEXT } from '@/lib/constants';
 
 export default function CreateRoom() {
   const router = useRouter();
@@ -19,7 +20,7 @@ export default function CreateRoom() {
   // Set default room name when user is available
   useEffect(() => {
     if (user && !roomName) {
-      setRoomName(`${user.username}'s Watch Party`);
+      setRoomName(`${user.username}'s ${APP_CONFIG.name}`);
     }
   }, [user, roomName]);
 
@@ -31,21 +32,21 @@ export default function CreateRoom() {
 
   const handleCreateRoom = async () => {
     if (!roomName.trim()) {
-      setError('Please enter a room name');
+      setError(MESSAGES.roomNameRequired);
       return;
     }
     if (roomName.length > 50) {
-      setError('Room name must be 50 characters or less');
+      setError(MESSAGES.roomNameTooLong);
       return;
     }
     if (!streamUrl.trim()) {
-      setError('Please enter a stream URL');
+      setError(MESSAGES.streamUrlRequired);
       return;
     }
 
     setIsCreating(true);
     setError('');
-    
+
     try {
       const response = await fetch('/api/rooms', {
         method: 'POST',
@@ -60,7 +61,7 @@ export default function CreateRoom() {
 
       if (response.ok) {
         const data = await response.json();
-        
+
         // Save to user's created rooms
         if (user) {
           const roomData = {
@@ -71,21 +72,21 @@ export default function CreateRoom() {
             ownerId: user.id,
             ownerName: user.username
           };
-          
+
           const existingRooms = JSON.parse(localStorage.getItem(`myRooms_${user.id}`) || '[]');
           const updatedRooms = [roomData, ...existingRooms.filter((r: any) => r.id !== data.roomId)];
           localStorage.setItem(`myRooms_${user.id}`, JSON.stringify(updatedRooms.slice(0, 10)));
         }
-        
+
         router.push(`/room/${data.roomId}`);
       } else {
         const errorData = await response.text();
         console.error('API Error:', errorData);
-        setError('Failed to create room. Please try again.');
+        setError(MESSAGES.createRoomFailed);
       }
     } catch (err) {
       console.error('Request failed:', err);
-      setError('Failed to create room. Please try again.');
+      setError(MESSAGES.createRoomFailed);
     } finally {
       setIsCreating(false);
     }
@@ -94,20 +95,20 @@ export default function CreateRoom() {
   return (
     <UserGuard>
       <main className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-md space-y-6">
+        <div className="w-full max-w-md space-y-6">
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <h1 className="text-2xl font-bold">Create Room</h1>
+          <h1 className="text-2xl font-bold">{UI_TEXT.createRoom}</h1>
         </div>
-        
+
         <div className="space-y-4">
           <div>
-            <label className="text-sm font-medium">Room Name</label>
+            <label className="text-sm font-medium">{UI_TEXT.roomName}</label>
             <Input
               type="text"
-              placeholder="My Watch Party"
+              placeholder={UI_TEXT.roomNamePlaceholder}
               value={roomName}
               onChange={(e) => setRoomName(e.target.value)}
               onKeyPress={handleKeyPress}
@@ -115,38 +116,38 @@ export default function CreateRoom() {
               className="mt-1"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Give your room a memorable name (max 50 characters)
+              {UI_TEXT.roomNameHelp}
             </p>
           </div>
-          
+
           <div>
-            <label className="text-sm font-medium">Stream URL</label>
+            <label className="text-sm font-medium">{UI_TEXT.streamUrl}</label>
             <Input
               type="url"
-              placeholder="https://example.com/video.mp4"
+              placeholder={UI_TEXT.streamUrlPlaceholder}
               value={streamUrl}
               onChange={(e) => setStreamUrl(e.target.value)}
               onKeyPress={handleKeyPress}
               className="mt-1"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Enter a direct video URL (MP4, HLS, etc.)
+              {UI_TEXT.streamUrlHelp}
             </p>
           </div>
-          
+
           {error && (
             <p className="text-sm text-destructive">{error}</p>
           )}
-          
-          <Button 
-            onClick={handleCreateRoom} 
+
+          <Button
+            onClick={handleCreateRoom}
             disabled={isCreating}
             className="w-full"
           >
             {isCreating && (
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {isCreating ? 'Creating...' : 'Create Room'}
+            {isCreating ? MESSAGES.creatingRoom : UI_TEXT.createRoom}
           </Button>
         </div>
       </div>
