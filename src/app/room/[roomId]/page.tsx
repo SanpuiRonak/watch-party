@@ -103,24 +103,26 @@ export default function RoomPage({ params }: RoomPageProps) {
     toast.success(MESSAGES.copiedToClipboard);
   };
 
-  if (!room || !user) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p>{MESSAGES.loadingRoom}</p>
-        </div>
-      </div>
-    );
-  }
-
   const handleUpdatePermissions = async (permissions: RoomPermissions) => {
     if (!user || !room) return;
-    
+
     console.log('[RoomPage] Updating permissions:', permissions);
     // Emit via socket for real-time updates
     emitPermissionsUpdate(permissions);
   };
+
+  if (!room || !user) {
+    return (
+      <AuthWrapper requireAuth={true} redirectTo="/user" loadingMessage="Loading room...">
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p>{MESSAGES.loadingRoom}</p>
+          </div>
+        </div>
+      </AuthWrapper>
+    );
+  }
 
   const isOwner = user.id === room.ownerId;
   const canPlay = room.permissions.canPlay;
@@ -132,8 +134,8 @@ export default function RoomPage({ params }: RoomPageProps) {
       <div className="min-h-screen bg-background">
         {/* Full Width Header */}
         <Header
-          leftAlignedComponents={[<HeaderLogo />, <RoomInfo />]}
-          rightAlignedComponents={[<ConnectionStatus />, <ThemeToggle />]}
+          leftAlignedComponents={[<HeaderLogo key="header-logo" />, <RoomInfo key="room-info" />]}
+          rightAlignedComponents={[<ConnectionStatus key="connection-status" />, <ThemeToggle key="theme-toggle" />]}
         />
 
         {/* Main Content */}
@@ -146,7 +148,7 @@ export default function RoomPage({ params }: RoomPageProps) {
                 onVideoEvent={handleVideoEvent}
                 canControl={isOwner || canPlay || canSeek || canChangeSpeed}
               />
-              
+
               {/* Mobile Tabs - Only show on mobile */}
               <div className="mt-2 lg:hidden">
                 <Tabs defaultValue="participants" className="w-full">
@@ -160,11 +162,11 @@ export default function RoomPage({ params }: RoomPageProps) {
                       {UI_TEXT.roomSettings}
                     </TabsTrigger>
                   </TabsList>
-                  
+
                   <TabsContent value="participants" className="mt-4">
                     <ParticipantsList />
                   </TabsContent>
-                  
+
                   <TabsContent value="settings" className="mt-4">
                     <div className={!isOwner ? 'pointer-events-none opacity-50' : ''}>
                       <RoomSettings
@@ -197,11 +199,11 @@ export default function RoomPage({ params }: RoomPageProps) {
                     {UI_TEXT.settings}
                   </TabsTrigger>
                 </TabsList>
-                
+
                 <TabsContent value="participants" className="mt-4 flex-1 overflow-hidden">
                   <ParticipantsList />
                 </TabsContent>
-                
+
                 <TabsContent value="settings" className="mt-4 flex-1 overflow-hidden">
                   <div className={!isOwner ? 'pointer-events-none opacity-50' : ''}>
                     <RoomSettings
