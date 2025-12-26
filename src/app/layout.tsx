@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     siteName: APP_CONFIG.name,
     images: [
       {
-        url: '/tada.webp',
+        url: APP_CONFIG.image,
         width: 1200,
         height: 630,
         alt: APP_CONFIG.name,
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: APP_CONFIG.name,
     description: APP_CONFIG.description,
-    images: ['/tada.webp'],
+    images: [APP_CONFIG.image],
   },
 };
 

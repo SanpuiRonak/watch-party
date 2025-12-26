@@ -6,6 +6,10 @@ import { VideoPlayer } from '@/components/room/ModernVideoPlayer';
 import { RoomSettings } from '@/components/room/RoomSettings';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
 import { UserSetup } from '@/components/user/UserSetup';
+import { Header } from '@/components/layout/Header';
+import { HeaderLogo } from '@/components/layout/HeaderLogo';
+import { RoomInfo } from '@/components/layout/RoomInfo';
+import { ConnectionStatus } from '@/components/layout/ConnectionStatus';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { UserGuard } from '@/components/auth/UserGuard';
 import { useSocket } from '@/hooks/useSocket';
@@ -149,36 +153,10 @@ export default function RoomPage({ params }: RoomPageProps) {
     <UserGuard>
       <div className="min-h-screen bg-background">
         {/* Full Width Header */}
-        <div className="w-screen bg-gray-100 dark:bg-gray-900 backdrop-blur supports-[backdrop-filter]:bg-gray-100/95 dark:supports-[backdrop-filter]:bg-gray-900/95">
-          <div className="px-6 py-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push('/')}>
-                  <h1 className="text-2xl font-bold">{APP_CONFIG.name}</h1>
-                  <span className="text-3xl">{APP_CONFIG.logo}</span>
-                </div>
-                <div
-                  className="flex items-center gap-2 text-muted-foreground cursor-pointer hover:bg-accent/50 transition-colors rounded-lg p-2 -m-2"
-                  onClick={shareRoom}
-                >
-                  <span className="text-lg font-medium">{room.name}</span>
-                  <Share className="h-4 w-4" />
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <ThemeToggle />
-
-                <div className="flex items-center space-x-2">
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="text-sm text-muted-foreground">
-                    {isConnected ? MESSAGES.connected : MESSAGES.disconnected}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Header
+          leftAlignedComponents={[<HeaderLogo />, <RoomInfo />]}
+          rightAlignedComponents={[<ConnectionStatus />, <ThemeToggle />]}
+        />
 
         {/* Main Content */}
         <div className="flex" style={{height: 'calc(100vh - 120px)'}}>
