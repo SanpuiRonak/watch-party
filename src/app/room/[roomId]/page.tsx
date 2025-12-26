@@ -5,13 +5,12 @@ import { useRouter } from 'next/navigation';
 import { VideoPlayer } from '@/components/room/ModernVideoPlayer';
 import { RoomSettings } from '@/components/room/RoomSettings';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
-import { UserSetup } from '@/components/user/UserSetup';
 import { Header } from '@/components/layout/Header';
 import { HeaderLogo } from '@/components/layout/HeaderLogo';
 import { RoomInfo } from '@/components/layout/RoomInfo';
 import { ConnectionStatus } from '@/components/layout/ConnectionStatus';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
-import { UserGuard } from '@/components/auth/UserGuard';
+import { AuthWrapper } from '@/components/auth/AuthWrapper';
 import { useSocket } from '@/hooks/useSocket';
 import { useUser } from '@/hooks/useUser';
 import { useAppSelector, useAppDispatch } from '@/lib/store';
@@ -30,10 +29,9 @@ interface RoomPageProps {
 export default function RoomPage({ params }: RoomPageProps) {
   const router = useRouter();
   const dispatch = useAppDispatch();
-  const { user, isAuthenticated } = useUser();
+  const { user } = useUser();
   const [roomId, setRoomId] = useState<string>('');
-  const [showUserSetup, setShowUserSetup] = useState(false);
-  
+
   const room = useAppSelector(state => state.room.currentRoom);
   const isConnected = useAppSelector(state => state.room.isConnected);
 
@@ -60,14 +58,10 @@ export default function RoomPage({ params }: RoomPageProps) {
     emitVideoEvent(eventType, currentTime, playbackRate);
   };
 
-  useEffect(() => {
-    if (roomId && !isAuthenticated) {
-      setShowUserSetup(true);
-    }
-  }, [roomId, isAuthenticated]);
+
 
   useEffect(() => {
-    if (roomId && isAuthenticated && !room) {
+    if (roomId && !room) {
       // Load room data
       fetch(`/api/rooms/${roomId}`)
         .then(res => {
@@ -81,7 +75,7 @@ export default function RoomPage({ params }: RoomPageProps) {
           if (roomData && user) {
             // Set room data in Redux while socket connects
             dispatch(setRoom(roomData));
-            
+
             // Save to recent rooms if not owned by user
             if (roomData.ownerId !== user.id) {
               const recentRoom = {
@@ -93,7 +87,7 @@ export default function RoomPage({ params }: RoomPageProps) {
                 ownerId: roomData.ownerId,
                 ownerName: roomData.ownerName || 'Unknown'
               };
-              
+
               const existingRecent = JSON.parse(localStorage.getItem(`recentRooms_${user.id}`) || '[]');
               const updatedRecent = [recentRoom, ...existingRecent.filter((r: any) => r.id !== roomData.id)];
               localStorage.setItem(`recentRooms_${user.id}`, JSON.stringify(updatedRecent.slice(0, 1000)));
@@ -102,28 +96,12 @@ export default function RoomPage({ params }: RoomPageProps) {
         })
         .catch(() => router.push('/404'));
     }
-  }, [roomId, isAuthenticated, room, router, dispatch, user]);
-
-  const handleUserSetupComplete = (user: { id: string; username: string }) => {
-    // User is set via Redux in UserSetup, cookie is set by API
-    setShowUserSetup(false);
-  };
+  }, [roomId, room, router, dispatch, user]);
 
   const copyRoomId = async () => {
     await navigator.clipboard.writeText(roomId);
     toast.success(MESSAGES.copiedToClipboard);
   };
-
-  useEffect(() => {
-    if (roomId && !isAuthenticated) {
-      const currentPath = window.location.pathname + window.location.search;
-      router.replace(`/user?returnUrl=${encodeURIComponent(currentPath)}`);
-    }
-  }, [roomId, isAuthenticated, router]);
-
-  if (!isAuthenticated) {
-    return null;
-  }
 
   if (!room || !user) {
     return (
@@ -150,7 +128,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   const canChangeSpeed = room.permissions.canChangeSpeed;
 
   return (
-    <UserGuard>
+    <AuthWrapper requireAuth={true} redirectTo="/user" loadingMessage="Loading room...">
       <div className="min-h-screen bg-background">
         {/* Full Width Header */}
         <Header
@@ -242,6 +220,6 @@ export default function RoomPage({ params }: RoomPageProps) {
           </div>
         </div>
       </div>
-    </UserGuard>
+    </AuthWrapper>
   );
 }

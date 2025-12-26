@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserSetup } from '@/components/user/UserSetup';
-import { UserGuard } from '@/components/auth/UserGuard';
+import { AuthWrapper } from '@/components/auth/AuthWrapper';
 import { Header } from '@/components/layout/Header';
 import { HeaderLogo } from '@/components/layout/HeaderLogo';
 import { WelcomeMessage } from '@/components/layout/WelcomeMessage';
@@ -133,18 +133,18 @@ export default function Home() {
   };
 
   return (
-    <UserGuard>
+    <AuthWrapper requireAuth={true} redirectTo="/user" loadingMessage="Loading Watch Party...">
       <main className="min-h-screen bg-background">
         {/* Header - Top 50% */}
         <div className="h-[50vh] flex flex-col px-6 py-6">
           <div className="-mx-6 -mt-6 mb-6">
             <Header
-              leftAlignedComponents={[<HeaderLogo />]}
+              leftAlignedComponents={[<HeaderLogo key="header-logo" />]}
               rightAlignedComponents={[
-                <WelcomeMessage />,
-                <CreateRoomButton />,
-                <JoinRoomButton />,
-                <ThemeToggle />
+                <WelcomeMessage key="welcome-message" />,
+                <CreateRoomButton key="create-room" />,
+                <JoinRoomButton key="join-room" />,
+                <ThemeToggle key="theme-toggle" />
               ]}
             />
           </div>
@@ -222,11 +222,11 @@ export default function Home() {
           </div>
         </div>
       
-        <UserSetup 
-          open={showUserSetup} 
+        <UserSetup
+          open={showUserSetup}
           onComplete={handleUserSetupComplete}
         />
       </main>
-    </UserGuard>
+    </AuthWrapper>
   );
 }
