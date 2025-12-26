@@ -12,7 +12,11 @@ RUN npm ci --omit=dev --ignore-scripts && npm install tsx
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json* ./
+
+# Install all dependencies for build process
+RUN npm ci --ignore-scripts && npm install tsx
+
 COPY . .
 
 # Build the application and compile TypeScript
