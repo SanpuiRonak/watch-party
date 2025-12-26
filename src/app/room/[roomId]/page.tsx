@@ -174,11 +174,6 @@ export default function RoomPage({ params }: RoomPageProps) {
                         isOwner={isOwner}
                       />
                     </div>
-                    {!isOwner && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-lg" title="Controls can only be updated by the room owner">
-                        <span className="sr-only">Controls can only be updated by the room owner</span>
-                      </div>
-                    )}
                   </TabsContent>
                 </Tabs>
               </div>
@@ -186,7 +181,7 @@ export default function RoomPage({ params }: RoomPageProps) {
           </div>
 
           {/* Right Sidebar - Desktop Only */}
-          <div className="hidden lg:block w-80 bg-neutral-50 dark:bg-neutral-800">
+          <div className="hidden lg:block w-80 bg-neutral-50 dark:bg-neutral-800 h-full">
             <div className="h-full p-4">
               <Tabs defaultValue="participants" className="w-full h-full flex flex-col">
                 <TabsList className="flex w-full gap-0">
@@ -211,11 +206,6 @@ export default function RoomPage({ params }: RoomPageProps) {
                       isOwner={isOwner}
                     />
                   </div>
-                  {!isOwner && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-black/5 rounded-lg" title="Controls can only be updated by the room owner">
-                      <span className="sr-only">Controls can only be updated by the room owner</span>
-                    </div>
-                  )}
                 </TabsContent>
               </Tabs>
             </div>
