@@ -14,7 +14,7 @@ export const useUser = () => {
     // Fetch session from API on mount (cookie-based authentication)
     const fetchSession = async () => {
       try {
-        const response = await fetch('/api/auth/session', {
+        const response = await fetch('/api/auth/user', {
           credentials: 'include', // Important: Include cookies
         });
         

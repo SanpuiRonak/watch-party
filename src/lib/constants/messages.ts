@@ -1,6 +1,6 @@
 export const MESSAGES = {
   // Welcome & Onboarding
-  welcome: 'Welcome to Watch Party! 🎉',
+  welcome: 'Welcome to Watch Party 🎉!',
   createUserPrompt: 'Please create a user to get started',
   createProfilePrompt: 'Create your profile to get started',
 

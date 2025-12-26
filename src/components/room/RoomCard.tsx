@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { UserAvatar } from '@/components/ui/user-avatar';
 import { useRouter } from 'next/navigation';
 import { Share, X } from 'lucide-react';
 import { MESSAGES } from '@/lib/constants';
+import { toast } from 'sonner';
+import { useUser } from '@/hooks/useUser';
 
 interface Room {
   id: string;
@@ -19,10 +22,9 @@ interface RoomCardProps {
   type: 'my-room' | 'recent-room';
   showDeleteButton?: boolean;
   showShareButton?: boolean;
-  onDelete?: (roomId: string) => void;
-  onShare?: (roomId: string) => void;
-  showAbsoluteTime?: {[key: string]: boolean};
-  onToggleTimeFormat?: (roomId: string) => void;
+  myRooms?: Room[];
+  recentRooms?: Room[];
+  onRoomsUpdate?: (type: 'my' | 'recent', rooms: Room[]) => void;
 }
 
 export function RoomCard({
@@ -30,12 +32,13 @@ export function RoomCard({
   type,
   showDeleteButton = true,
   showShareButton = true,
-  onDelete,
-  onShare,
-  showAbsoluteTime = {},
-  onToggleTimeFormat
+  myRooms = [],
+  recentRooms = [],
+  onRoomsUpdate
 }: RoomCardProps) {
   const router = useRouter();
+  const { user } = useUser();
+  const [showAbsoluteTime, setShowAbsoluteTime] = useState<{[key: string]: boolean}>({});
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString();
@@ -72,6 +75,31 @@ export function RoomCard({
       : `Created ${getTimeAgo(getTimestamp())}`;
   };
 
+  const shareRoom = async () => {
+    const shareUrl = `${window.location.origin}/room/${room.id}`;
+    await navigator.clipboard.writeText(shareUrl);
+    toast.success(MESSAGES.copiedToClipboard);
+  };
+
+  const deleteRoom = () => {
+    if (type === 'my-room') {
+      const updatedRooms = myRooms.filter(r => r.id !== room.id);
+      onRoomsUpdate?.('my', updatedRooms);
+      localStorage.setItem(`myRooms_${user?.id}`, JSON.stringify(updatedRooms));
+    } else {
+      const updatedRooms = recentRooms.filter(r => r.id !== room.id);
+      onRoomsUpdate?.('recent', updatedRooms);
+      localStorage.setItem(`recentRooms_${user?.id}`, JSON.stringify(updatedRooms));
+    }
+  };
+
+  const toggleTimeFormat = () => {
+    setShowAbsoluteTime(prev => ({
+      ...prev,
+      [room.id]: !prev[room.id]
+    }));
+  };
+
   return (
     <div className="relative flex-shrink-0 min-w-80 max-w-96 p-4 border rounded-lg hover:bg-muted/50 group">
       {showDeleteButton && (
@@ -81,7 +109,7 @@ export function RoomCard({
           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
           onClick={(e) => {
             e.stopPropagation();
-            onDelete?.(room.id);
+            deleteRoom();
           }}
         >
           <X className="h-4 w-4" />
@@ -94,7 +122,7 @@ export function RoomCard({
           className="absolute bottom-2 right-2"
           onClick={(e) => {
             e.stopPropagation();
-            onShare?.(room.id);
+            shareRoom();
           }}
         >
           <Share className="h-3 w-3" />
@@ -115,7 +143,7 @@ export function RoomCard({
             className="cursor-pointer border-b border-dotted border-muted-foreground flex-shrink-0"
             onClick={(e) => {
               e.stopPropagation();
-              onToggleTimeFormat?.(room.id);
+              toggleTimeFormat();
             }}
           >
             {getTimestampLabel()}

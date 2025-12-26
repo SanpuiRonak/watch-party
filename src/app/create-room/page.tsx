@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { UserGuard } from '@/components/auth/UserGuard';
+import { AuthWrapper } from '@/components/auth/AuthWrapper';
 import { useUser } from '@/hooks/useUser';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { APP_CONFIG, MESSAGES, UI_TEXT } from '@/lib/constants';
@@ -48,7 +48,7 @@ export default function CreateRoom() {
     setError('');
 
     try {
-      const response = await fetch('/api/rooms', {
+      const response = await fetch('/api/room', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -93,7 +93,7 @@ export default function CreateRoom() {
   };
 
   return (
-    <UserGuard>
+    <AuthWrapper requireAuth={true} redirectTo="/user">
       <main className="min-h-screen flex items-center justify-center bg-background p-4">
         <div className="w-full max-w-md space-y-6">
         <div className="flex items-center space-x-2">
@@ -152,6 +152,6 @@ export default function CreateRoom() {
         </div>
       </div>
     </main>
-    </UserGuard>
+    </AuthWrapper>
   );
 }

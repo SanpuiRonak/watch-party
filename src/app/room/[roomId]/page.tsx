@@ -2,13 +2,13 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { VideoPlayer } from '@/components/room/ModernVideoPlayer';
+import { VideoPlayer } from '@/components/room/VideoPlayer';
 import { RoomSettings } from '@/components/room/RoomSettings';
 import { ParticipantsList } from '@/components/room/ParticipantsList';
-import { Header } from '@/components/layout/Header';
-import { HeaderLogo } from '@/components/layout/HeaderLogo';
-import { RoomInfo } from '@/components/layout/RoomInfo';
-import { ConnectionStatus } from '@/components/layout/ConnectionStatus';
+import { Header } from '@/components/header/Header';
+import { HeaderLogo } from '@/components/header/HeaderLogo';
+import { RoomInfo } from '@/components/header/RoomInfo';
+import { ConnectionStatus } from '@/components/header/ConnectionStatus';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { AuthWrapper } from '@/components/auth/AuthWrapper';
 import { useSocket } from '@/hooks/useSocket';
@@ -63,7 +63,7 @@ export default function RoomPage({ params }: RoomPageProps) {
   useEffect(() => {
     if (roomId && !room) {
       // Load room data
-      fetch(`/api/rooms/${roomId}`)
+      fetch(`/api/room/${roomId}`)
         .then(res => {
           if (!res.ok) {
             router.push('/404');
@@ -146,7 +146,6 @@ export default function RoomPage({ params }: RoomPageProps) {
               <VideoPlayer
                 streamUrl={room.streamUrl}
                 onVideoEvent={handleVideoEvent}
-                canControl={isOwner || canPlay || canSeek || canChangeSpeed}
               />
 
               {/* Mobile Tabs - Only show on mobile */}

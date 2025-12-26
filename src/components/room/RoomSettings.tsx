@@ -58,47 +58,6 @@ export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps
     setHasChanges(false);
   };
 
-  if (!isOwner) {
-    return (
-      <div className="flex flex-col h-full">
-        <div className="flex-1 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Play className="h-4 w-4" />
-              <span>Allow viewers to play/pause</span>
-            </div>
-            <Switch
-              checked={room?.permissions.canPlay ?? true}
-              disabled
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <SkipForward className="h-4 w-4" />
-              <span>Allow viewers to seek</span>
-            </div>
-            <Switch
-              checked={room?.permissions.canSeek ?? true}
-              disabled
-            />
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Gauge className="h-4 w-4" />
-              <span>Allow viewers to change speed</span>
-            </div>
-            <Switch
-              checked={room?.permissions.canChangeSpeed ?? true}
-              disabled
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex-1 space-y-4">
@@ -108,49 +67,54 @@ export function RoomSettings({ onUpdatePermissions, isOwner }: RoomSettingsProps
             <span>Allow viewers to play/pause</span>
           </div>
           <Switch
-            checked={canPlay}
-            onCheckedChange={(checked) => {
+            checked={isOwner ? canPlay : (room?.permissions.canPlay ?? true)}
+            disabled={!isOwner}
+            onCheckedChange={isOwner ? (checked) => {
               console.log('[RoomSettings] canPlay changed to:', checked);
               setCanPlay(checked);
-            }}
+            } : undefined}
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <SkipForward className="h-4 w-4" />
             <span>Allow viewers to seek</span>
           </div>
           <Switch
-            checked={canSeek}
-            onCheckedChange={setCanSeek}
+            checked={isOwner ? canSeek : (room?.permissions.canSeek ?? true)}
+            disabled={!isOwner}
+            onCheckedChange={isOwner ? setCanSeek : undefined}
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <Gauge className="h-4 w-4" />
             <span>Allow viewers to change speed</span>
           </div>
           <Switch
-            checked={canChangeSpeed}
-            onCheckedChange={setCanChangeSpeed}
+            checked={isOwner ? canChangeSpeed : (room?.permissions.canChangeSpeed ?? true)}
+            disabled={!isOwner}
+            onCheckedChange={isOwner ? setCanChangeSpeed : undefined}
           />
         </div>
       </div>
-      
-      <div className="mt-auto pt-4">
-        <Button 
-          onClick={() => {
-            console.log('[RoomSettings] Apply button clicked, hasChanges:', hasChanges);
-            handleSave();
-          }} 
-          className="w-full" 
-          disabled={!hasChanges}
-        >
-          Apply Changes
-        </Button>
-      </div>
+
+      {isOwner && (
+        <div className="mt-auto pt-4">
+          <Button
+            onClick={() => {
+              console.log('[RoomSettings] Apply button clicked, hasChanges:', hasChanges);
+              handleSave();
+            }}
+            className="w-full"
+            disabled={!hasChanges}
+          >
+            Apply Changes
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

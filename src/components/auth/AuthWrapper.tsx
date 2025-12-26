@@ -4,14 +4,32 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/hooks/useUser';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { User } from '@/lib/types';
 
-interface AuthWrapperProps {
-  children: React.ReactNode;
-  requireAuth?: boolean;
+// TypeScript overloads for better type safety
+export function AuthWrapper(props: {
+  children: (user: User) => React.ReactNode;
+  requireAuth: true;
   redirectTo?: string;
   loadingMessage?: string;
   showLoadingSpinner?: boolean;
-}
+}): JSX.Element;
+
+export function AuthWrapper(props: {
+  children: React.ReactNode;
+  requireAuth: true;
+  redirectTo?: string;
+  loadingMessage?: string;
+  showLoadingSpinner?: boolean;
+}): JSX.Element;
+
+export function AuthWrapper(props: {
+  children: React.ReactNode;
+  requireAuth?: false;
+  redirectTo?: string;
+  loadingMessage?: string;
+  showLoadingSpinner?: boolean;
+}): JSX.Element;
 
 export function AuthWrapper({
   children,
@@ -19,9 +37,15 @@ export function AuthWrapper({
   redirectTo = '/user',
   loadingMessage = "Loading...",
   showLoadingSpinner = true
-}: AuthWrapperProps) {
+}: {
+  children: React.ReactNode | ((user: User) => React.ReactNode);
+  requireAuth?: boolean;
+  redirectTo?: string;
+  loadingMessage?: string;
+  showLoadingSpinner?: boolean;
+}): JSX.Element {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useUser();
+  const { user, isAuthenticated, isLoading } = useUser();
 
   // Handle redirects for required auth - hooks must be called in same order always
   useEffect(() => {
@@ -39,6 +63,16 @@ export function AuthWrapper({
   // Show loading during redirect
   if (requireAuth && !isLoading && !isAuthenticated) {
     return <LoadingSpinner message="Redirecting..." />;
+  }
+
+  // When requireAuth is true, ensure user exists before rendering
+  if (requireAuth && !user) {
+    return <LoadingSpinner message="Loading..." />;
+  }
+
+  // Render children with type safety
+  if (requireAuth && typeof children === 'function') {
+    return <>{children(user!)}</>; // user is guaranteed non-null here
   }
 
   return <>{children}</>;

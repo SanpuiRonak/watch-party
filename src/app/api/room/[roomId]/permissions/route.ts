@@ -4,6 +4,7 @@ import { RoomPermissions } from '@/lib/types';
 import { logger } from '@/lib/utils/logger';
 import { withErrorHandler, NotFoundError, ForbiddenError } from '@/lib/utils/errorHandler';
 import { validatePermissionsRequest } from '@/lib/middleware/requestValidation';
+import { apiRateLimiter, checkRateLimit } from '@/lib/middleware/rateLimiter';
 
 const roomManager = new RoomManager();
 
@@ -11,6 +12,21 @@ export const PUT = withErrorHandler(async (
   request: NextRequest,
   { params }: { params: Promise<{ roomId: string }> }
 ) => {
+  // Rate limiting - prevent abuse
+  const clientIp = request.headers.get('x-forwarded-for') ||
+                   request.headers.get('x-real-ip') ||
+                   'unknown';
+
+  try {
+    await checkRateLimit(apiRateLimiter, clientIp);
+  } catch (error) {
+    logger.rateLimitEvent(clientIp, 'update_permissions', true);
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   const { roomId } = await params;
   const body = await request.json();
   

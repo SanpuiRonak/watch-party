@@ -4,11 +4,11 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { UserSetup } from '@/components/user/UserSetup';
 import { AuthWrapper } from '@/components/auth/AuthWrapper';
-import { Header } from '@/components/layout/Header';
-import { HeaderLogo } from '@/components/layout/HeaderLogo';
-import { WelcomeMessage } from '@/components/layout/WelcomeMessage';
-import { CreateRoomButton } from '@/components/layout/CreateRoomButton';
-import { JoinRoomButton } from '@/components/layout/JoinRoomButton';
+import { Header } from '@/components/header/Header';
+import { HeaderLogo } from '@/components/header/HeaderLogo';
+import { WelcomeMessage } from '@/components/header/WelcomeMessage';
+import { CreateRoomButton } from '@/components/header/CreateRoomButton';
+import { JoinRoomButton } from '@/components/header/JoinRoomButton';
 import { RoomCard } from '@/components/room/RoomCard';
 import { EmptyCardSection } from '@/components/ui/EmptyCardSection';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -120,15 +120,11 @@ export default function Home() {
     setTimeout(() => setCopiedRoomId(null), 2000);
   };
 
-  const deleteRoom = (roomId: string, isMyRoom: boolean) => {
-    if (isMyRoom) {
-      const updatedRooms = myRooms.filter(room => room.id !== roomId);
-      setMyRooms(updatedRooms);
-      localStorage.setItem(`myRooms_${user?.id}`, JSON.stringify(updatedRooms));
+  const handleRoomsUpdate = (type: 'my' | 'recent', rooms: Room[]) => {
+    if (type === 'my') {
+      setMyRooms(rooms);
     } else {
-      const updatedRooms = recentRooms.filter(room => room.id !== roomId);
-      setRecentRooms(updatedRooms);
-      localStorage.setItem(`recentRooms_${user?.id}`, JSON.stringify(updatedRooms));
+      setRecentRooms(rooms);
     }
   };
 
@@ -173,10 +169,9 @@ export default function Home() {
                           key={room.id}
                           room={room}
                           type="my-room"
-                          onDelete={(roomId) => deleteRoom(roomId, true)}
-                          onShare={shareRoom}
-                          showAbsoluteTime={showAbsoluteTime}
-                          onToggleTimeFormat={toggleTimeFormat}
+                          myRooms={myRooms}
+                          recentRooms={recentRooms}
+                          onRoomsUpdate={handleRoomsUpdate}
                         />
                       ))}
                     </div>
@@ -202,10 +197,9 @@ export default function Home() {
                           key={room.id}
                           room={room}
                           type="recent-room"
-                          onDelete={(roomId) => deleteRoom(roomId, false)}
-                          onShare={shareRoom}
-                          showAbsoluteTime={showAbsoluteTime}
-                          onToggleTimeFormat={toggleTimeFormat}
+                          myRooms={myRooms}
+                          recentRooms={recentRooms}
+                          onRoomsUpdate={handleRoomsUpdate}
                         />
                       ))}
                     </div>

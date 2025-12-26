@@ -4,10 +4,26 @@ import { CreateRoomRequest } from '@/lib/types';
 import { logger } from '@/lib/utils/logger';
 import { withErrorHandler, ValidationError } from '@/lib/utils/errorHandler';
 import { validateRoomCreationRequest } from '@/lib/middleware/requestValidation';
+import { createRoomRateLimiter, checkRateLimit } from '@/lib/middleware/rateLimiter';
 
 const roomManager = new RoomManager();
 
 export const POST = withErrorHandler(async (request: NextRequest) => {
+  // Rate limiting - prevent abuse
+  const clientIp = request.headers.get('x-forwarded-for') ||
+                   request.headers.get('x-real-ip') ||
+                   'unknown';
+
+  try {
+    await checkRateLimit(createRoomRateLimiter, clientIp);
+  } catch (error) {
+    logger.rateLimitEvent(clientIp, 'create_room', true);
+    return NextResponse.json(
+      { error: 'Too many room creations. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   // Parse and validate request body with size limits
   const body: CreateRoomRequest = await request.json();
   
