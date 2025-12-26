@@ -1,13 +1,13 @@
-import { configureStore } from '@reduxjs/toolkit';
-import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
-import userSlice from './slices/userSlice';
-import roomSlice from './slices/roomSlice';
+import { configureStore } from "@reduxjs/toolkit";
+import { TypedUseSelectorHook, useDispatch, useSelector } from "react-redux";
+import userSlice from "./slices/userSlice";
+import roomSlice from "./slices/roomSlice";
 
 export const store = configureStore({
-  reducer: {
-    user: userSlice,
-    room: roomSlice,
-  },
+    reducer: {
+        user: userSlice,
+        room: roomSlice,
+    },
 });
 
 export type RootState = ReturnType<typeof store.getState>;

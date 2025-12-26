@@ -1,25 +1,25 @@
-import { io, Socket } from 'socket.io-client';
+import { io, Socket } from "socket.io-client";
 
 class SocketManager {
-  private socket: Socket | null = null;
+    private socket: Socket | null = null;
 
-  connect(): Socket {
-    if (!this.socket) {
-      this.socket = io(process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000');
+    connect(): Socket {
+        if (!this.socket) {
+            this.socket = io(process.env.NEXT_PUBLIC_ORIGIN || "http://localhost:3000");
+        }
+        return this.socket;
     }
-    return this.socket;
-  }
 
-  disconnect(): void {
-    if (this.socket) {
-      this.socket.disconnect();
-      this.socket = null;
+    disconnect(): void {
+        if (this.socket) {
+            this.socket.disconnect();
+            this.socket = null;
+        }
     }
-  }
 
-  getSocket(): Socket | null {
-    return this.socket;
-  }
+    getSocket(): Socket | null {
+        return this.socket;
+    }
 }
 
 export const socketManager = new SocketManager();

@@ -1,7 +1,7 @@
 /**
  * Session Manager - Cookie-Based Sessions
  * Addresses Medium Severity Issue #12: Server-Side Sessions
- * 
+ *
  * Provides secure cookie-based session management with:
  * - httpOnly cookies (prevents XSS access)
  * - Secure flag (requires HTTPS via Traefik)
@@ -9,26 +9,26 @@
  * - JWT-based authentication
  */
 
-import { cookies } from 'next/headers';
-import { NextRequest, NextResponse } from 'next/server';
-import { generateToken, verifyToken, JWTPayload } from './jwt';
-import { logger } from './logger';
+import { cookies } from "next/headers";
+import { NextRequest, NextResponse } from "next/server";
+import { generateToken, JWTPayload, verifyToken } from "./jwt";
+import { logger } from "./logger";
 
 // ============================================================================
 // Configuration
 // ============================================================================
 
 const SESSION_CONFIG = {
-  cookieName: 'watch-party-session',
-  
-  // Cookie options
-  httpOnly: true,  // Prevents JavaScript access (XSS protection)
-  secure: process.env.NODE_ENV === 'production', // HTTPS only in production (Traefik handles this)
-  sameSite: 'strict' as const, // CSRF protection
-  path: '/',
-  
-  // No maxAge - cookies persist as session cookies (cleared when browser closes)
-  // JWT tokens also don't expire - anonymous users can't re-authenticate
+    cookieName: "watch-party-session",
+
+    // Cookie options
+    httpOnly: true, // Prevents JavaScript access (XSS protection)
+    secure: process.env.NODE_ENV === "production", // HTTPS only in production (Traefik handles this)
+    sameSite: "strict" as const, // CSRF protection
+    path: "/",
+
+    // No maxAge - cookies persist as session cookies (cleared when browser closes)
+    // JWT tokens also don't expire - anonymous users can't re-authenticate
 } as const;
 
 // ============================================================================
@@ -38,21 +38,18 @@ const SESSION_CONFIG = {
 /**
  * Creates a new session by setting a secure cookie
  */
-export async function createSession(
-  userId: string,
-  username: string
-): Promise<void> {
-  const token = generateToken(userId, username);
-  
-  const cookieStore = await cookies();
-  cookieStore.set(SESSION_CONFIG.cookieName, token, {
-    httpOnly: SESSION_CONFIG.httpOnly,
-    secure: SESSION_CONFIG.secure,
-    sameSite: SESSION_CONFIG.sameSite,
-    path: SESSION_CONFIG.path,
-  });
-  
-  logger.authEvent('login', userId);
+export async function createSession(userId: string, username: string): Promise<void> {
+    const token = generateToken(userId, username);
+
+    const cookieStore = await cookies();
+    cookieStore.set(SESSION_CONFIG.cookieName, token, {
+        httpOnly: SESSION_CONFIG.httpOnly,
+        secure: SESSION_CONFIG.secure,
+        sameSite: SESSION_CONFIG.sameSite,
+        path: SESSION_CONFIG.path,
+    });
+
+    logger.authEvent("login", userId);
 }
 
 /**
@@ -60,22 +57,22 @@ export async function createSession(
  * Use this when you need to set cookies in API route responses
  */
 export function setSessionCookie(
-  response: NextResponse,
-  userId: string,
-  username: string
+    response: NextResponse,
+    userId: string,
+    username: string,
 ): NextResponse {
-  const token = generateToken(userId, username);
-  
-  response.cookies.set(SESSION_CONFIG.cookieName, token, {
-    httpOnly: SESSION_CONFIG.httpOnly,
-    secure: SESSION_CONFIG.secure,
-    sameSite: SESSION_CONFIG.sameSite,
-    path: SESSION_CONFIG.path,
-  });
-  
-  logger.authEvent('login', userId);
-  
-  return response;
+    const token = generateToken(userId, username);
+
+    response.cookies.set(SESSION_CONFIG.cookieName, token, {
+        httpOnly: SESSION_CONFIG.httpOnly,
+        secure: SESSION_CONFIG.secure,
+        sameSite: SESSION_CONFIG.sameSite,
+        path: SESSION_CONFIG.path,
+    });
+
+    logger.authEvent("login", userId);
+
+    return response;
 }
 
 // ============================================================================
@@ -87,20 +84,20 @@ export function setSessionCookie(
  * Returns null if no valid session exists
  */
 export async function getSession(): Promise<JWTPayload | null> {
-  try {
-    const cookieStore = await cookies();
-    const sessionCookie = cookieStore.get(SESSION_CONFIG.cookieName);
-    
-    if (!sessionCookie) {
-      return null;
+    try {
+        const cookieStore = await cookies();
+        const sessionCookie = cookieStore.get(SESSION_CONFIG.cookieName);
+
+        if (!sessionCookie) {
+            return null;
+        }
+
+        const payload = verifyToken(sessionCookie.value);
+        return payload;
+    } catch (error) {
+        logger.authEvent("auth_failed", undefined, "Invalid session token");
+        return null;
     }
-    
-    const payload = verifyToken(sessionCookie.value);
-    return payload;
-  } catch (error) {
-    logger.authEvent('auth_failed', undefined, 'Invalid session token');
-    return null;
-  }
 }
 
 /**
@@ -108,19 +105,19 @@ export async function getSession(): Promise<JWTPayload | null> {
  * Useful for middleware and API routes
  */
 export function getSessionFromRequest(request: NextRequest): JWTPayload | null {
-  try {
-    const sessionCookie = request.cookies.get(SESSION_CONFIG.cookieName);
-    
-    if (!sessionCookie) {
-      return null;
+    try {
+        const sessionCookie = request.cookies.get(SESSION_CONFIG.cookieName);
+
+        if (!sessionCookie) {
+            return null;
+        }
+
+        const payload = verifyToken(sessionCookie.value);
+        return payload;
+    } catch (error) {
+        logger.authEvent("auth_failed", undefined, "Invalid session token");
+        return null;
     }
-    
-    const payload = verifyToken(sessionCookie.value);
-    return payload;
-  } catch (error) {
-    logger.authEvent('auth_failed', undefined, 'Invalid session token');
-    return null;
-  }
 }
 
 /**
@@ -128,13 +125,13 @@ export function getSessionFromRequest(request: NextRequest): JWTPayload | null {
  * Throws error if session is invalid
  */
 export async function requireSession(): Promise<JWTPayload> {
-  const session = await getSession();
-  
-  if (!session) {
-    throw new Error('Authentication required');
-  }
-  
-  return session;
+    const session = await getSession();
+
+    if (!session) {
+        throw new Error("Authentication required");
+    }
+
+    return session;
 }
 
 /**
@@ -142,13 +139,13 @@ export async function requireSession(): Promise<JWTPayload> {
  * Throws error if session is invalid
  */
 export function requireSessionFromRequest(request: NextRequest): JWTPayload {
-  const session = getSessionFromRequest(request);
-  
-  if (!session) {
-    throw new Error('Authentication required');
-  }
-  
-  return session;
+    const session = getSessionFromRequest(request);
+
+    if (!session) {
+        throw new Error("Authentication required");
+    }
+
+    return session;
 }
 
 // ============================================================================
@@ -159,20 +156,20 @@ export function requireSessionFromRequest(request: NextRequest): JWTPayload {
  * Destroys the current session by deleting the cookie
  */
 export async function destroySession(userId?: string): Promise<void> {
-  const cookieStore = await cookies();
-  cookieStore.delete(SESSION_CONFIG.cookieName);
-  
-  if (userId) {
-    logger.authEvent('logout', userId);
-  }
+    const cookieStore = await cookies();
+    cookieStore.delete(SESSION_CONFIG.cookieName);
+
+    if (userId) {
+        logger.authEvent("logout", userId);
+    }
 }
 
 /**
  * Destroys session in a NextResponse
  */
 export function destroySessionCookie(response: NextResponse): NextResponse {
-  response.cookies.delete(SESSION_CONFIG.cookieName);
-  return response;
+    response.cookies.delete(SESSION_CONFIG.cookieName);
+    return response;
 }
 
 // ============================================================================
@@ -183,16 +180,16 @@ export function destroySessionCookie(response: NextResponse): NextResponse {
  * Checks if a valid session exists
  */
 export async function hasValidSession(): Promise<boolean> {
-  const session = await getSession();
-  return session !== null;
+    const session = await getSession();
+    return session !== null;
 }
 
 /**
  * Checks if request has a valid session
  */
 export function hasValidSessionInRequest(request: NextRequest): boolean {
-  const session = getSessionFromRequest(request);
-  return session !== null;
+    const session = getSessionFromRequest(request);
+    return session !== null;
 }
 
 // ============================================================================
@@ -204,31 +201,28 @@ export function hasValidSessionInRequest(request: NextRequest): boolean {
  * This extends the session expiry time
  */
 export async function refreshSession(): Promise<void> {
-  const session = await getSession();
-  
-  if (!session) {
-    throw new Error('No session to refresh');
-  }
-  
-  // Create new session with same user data
-  await createSession(session.userId, session.username);
-  logger.authEvent('token_refresh', session.userId);
+    const session = await getSession();
+
+    if (!session) {
+        throw new Error("No session to refresh");
+    }
+
+    // Create new session with same user data
+    await createSession(session.userId, session.username);
+    logger.authEvent("token_refresh", session.userId);
 }
 
 /**
  * Refreshes session in a NextResponse
  */
-export function refreshSessionCookie(
-  response: NextResponse,
-  request: NextRequest
-): NextResponse {
-  const session = getSessionFromRequest(request);
-  
-  if (!session) {
-    return response;
-  }
-  
-  return setSessionCookie(response, session.userId, session.username);
+export function refreshSessionCookie(response: NextResponse, request: NextRequest): NextResponse {
+    const session = getSessionFromRequest(request);
+
+    if (!session) {
+        return response;
+    }
+
+    return setSessionCookie(response, session.userId, session.username);
 }
 
 // ============================================================================
@@ -240,16 +234,16 @@ export function refreshSessionCookie(
  * Returns null if no session
  */
 export async function getCurrentUserId(): Promise<string | null> {
-  const session = await getSession();
-  return session?.userId || null;
+    const session = await getSession();
+    return session?.userId || null;
 }
 
 /**
  * Gets user ID from request
  */
 export function getUserIdFromRequest(request: NextRequest): string | null {
-  const session = getSessionFromRequest(request);
-  return session?.userId || null;
+    const session = getSessionFromRequest(request);
+    return session?.userId || null;
 }
 
 /**
@@ -257,8 +251,8 @@ export function getUserIdFromRequest(request: NextRequest): string | null {
  * Returns null if no session
  */
 export async function getCurrentUsername(): Promise<string | null> {
-  const session = await getSession();
-  return session?.username || null;
+    const session = await getSession();
+    return session?.username || null;
 }
 
 // ============================================================================
@@ -268,38 +262,38 @@ export async function getCurrentUsername(): Promise<string | null> {
 /**
  * Checks if user has old localStorage session
  * This is for backward compatibility during migration
- * 
+ *
  * Client should call this and if returns false, redirect to setup
  */
 export function shouldMigrateFromLocalStorage(): boolean {
-  // This function is meant to be used client-side
-  // Server-side always returns false
-  if (typeof window === 'undefined') {
-    return false;
-  }
-  
-  try {
-    const oldUser = localStorage.getItem('watch-party-user');
-    return oldUser !== null;
-  } catch {
-    return false;
-  }
+    // This function is meant to be used client-side
+    // Server-side always returns false
+    if (typeof window === "undefined") {
+        return false;
+    }
+
+    try {
+        const oldUser = localStorage.getItem("watch-party-user");
+        return oldUser !== null;
+    } catch {
+        return false;
+    }
 }
 
 /**
  * Clears old localStorage data after migration
  */
 export function clearOldLocalStorageSession(): void {
-  if (typeof window === 'undefined') {
-    return;
-  }
-  
-  try {
-    localStorage.removeItem('watch-party-user');
-    logger.info('Cleared old localStorage session');
-  } catch (error) {
-    logger.warn('Failed to clear old localStorage session', error);
-  }
+    if (typeof window === "undefined") {
+        return;
+    }
+
+    try {
+        localStorage.removeItem("watch-party-user");
+        logger.info("Cleared old localStorage session");
+    } catch (error) {
+        logger.warn("Failed to clear old localStorage session", error);
+    }
 }
 
 // ============================================================================
@@ -308,37 +302,37 @@ export function clearOldLocalStorageSession(): void {
 
 /**
  * Example 1: Creating a session in an API route
- * 
+ *
  * export async function POST(request: NextRequest) {
  *   const { username } = await request.json();
  *   const userId = crypto.randomUUID();
- *   
- *   const response = NextResponse.json({ 
- *     user: { id: userId, username } 
+ *
+ *   const response = NextResponse.json({
+ *     user: { id: userId, username }
  *   });
- *   
+ *
  *   return setSessionCookie(response, userId, username);
  * }
- * 
- * 
+ *
+ *
  * Example 2: Getting session in an API route
- * 
+ *
  * export async function GET(request: NextRequest) {
  *   const session = getSessionFromRequest(request);
- *   
+ *
  *   if (!session) {
  *     return NextResponse.json(
  *       { error: 'Unauthorized' },
  *       { status: 401 }
  *     );
  *   }
- *   
+ *
  *   return NextResponse.json({ user: session });
  * }
- * 
- * 
+ *
+ *
  * Example 3: Requiring authentication
- * 
+ *
  * export async function DELETE(request: NextRequest) {
  *   try {
  *     const session = requireSessionFromRequest(request);
@@ -351,19 +345,19 @@ export function clearOldLocalStorageSession(): void {
  *     );
  *   }
  * }
- * 
- * 
+ *
+ *
  * Example 4: Destroying a session (logout)
- * 
+ *
  * export async function POST(request: NextRequest) {
  *   const session = getSessionFromRequest(request);
  *   const response = NextResponse.json({ success: true });
- *   
+ *
  *   if (session) {
  *     destroySessionCookie(response);
  *     logger.authEvent('logout', session.userId);
  *   }
- *   
+ *
  *   return response;
  * }
  */
