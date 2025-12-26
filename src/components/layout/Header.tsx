@@ -10,7 +10,7 @@ export function Header({
   rightAlignedComponents = []
 }: HeaderProps) {
   return (
-    <div className="w-screen bg-gray-100 dark:bg-gray-900">
+    <div className="w-screen bg-neutral-100 dark:bg-neutral-900">
       <div className="px-6 py-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

@@ -186,7 +186,7 @@ export default function RoomPage({ params }: RoomPageProps) {
           </div>
 
           {/* Right Sidebar - Desktop Only */}
-          <div className="hidden lg:block w-80 bg-gray-50 dark:bg-gray-800">
+          <div className="hidden lg:block w-80 bg-neutral-50 dark:bg-neutral-800">
             <div className="h-full p-4">
               <Tabs defaultValue="participants" className="w-full h-full flex flex-col">
                 <TabsList className="flex w-full gap-0">
