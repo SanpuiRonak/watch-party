@@ -109,7 +109,7 @@ export class RoomManager {
   }
 
   async updateVideoState(roomId: string, eventType: 'play' | 'pause' | 'seek', currentTime: number, playbackRate: number = 1): Promise<VideoState | null> {
-    // Validate inputs (note: eventType, currentTime, and playbackRate are validated in socket-server.ts)
+    // Validate inputs (note: eventType, currentTime, and playbackRate are validated in server.ts)
     const sanitizedRoomId = validateRoomId(roomId);
     
     const videoState: VideoState = {

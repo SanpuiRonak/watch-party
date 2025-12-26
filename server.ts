@@ -33,9 +33,7 @@ app.prepare().then(() => {
   });
 
   // Define allowed origins based on environment
-  const allowedOrigins = process.env.NODE_ENV === 'production'
-    ? [process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000']
-    : ['http://localhost:3000', 'http://127.0.0.1:3000'];
+  const allowedOrigins = [process.env.NEXT_PUBLIC_ORIGIN || 'http://localhost:3000'];
 
   const io = new Server(httpServer, {
     cors: {
@@ -44,7 +42,7 @@ app.prepare().then(() => {
         if (!origin && process.env.NODE_ENV !== 'production') {
           return callback(null, true);
         }
-        
+
         if (!origin || allowedOrigins.includes(origin)) {
           callback(null, true);
         } else {
@@ -94,7 +92,7 @@ app.prepare().then(() => {
         }
 
         const room = await roomManager.addParticipant(validRoomId, validUserId, validUsername);
-        
+
         if (!room) {
           socket.emit('error', 'Room not found');
           return;
@@ -105,10 +103,10 @@ app.prepare().then(() => {
         secureLogger.roomAction('User joined', validRoomId, validUserId);
 
         socket.join(validRoomId);
-        
+
         // Send updated room state to all participants in the room
         io.to(validRoomId).emit('room-state', room);
-        
+
       } catch (error) {
         secureLogger.error('Error joining room:', error);
         socket.emit('error', 'Failed to join room');
@@ -124,15 +122,15 @@ app.prepare().then(() => {
 
         await roomManager.removeParticipant(validRoomId, validUserId);
         const updatedRoom = await roomManager.getRoom(validRoomId);
-        
+
         socket.leave(validRoomId);
         userRoomMap.delete(socket.id);
-        
+
         if (updatedRoom) {
           // Broadcast updated room state to remaining participants
           io.to(validRoomId).emit('room-state', updatedRoom);
         }
-        
+
         secureLogger.roomAction('User left', validRoomId, validUserId);
       } catch (error) {
         secureLogger.error('Error leaving room:', error);
@@ -148,19 +146,19 @@ app.prepare().then(() => {
         const validUserId = validateUserId(userId);
         const validPlaybackRate = validatePlaybackRate(playbackRate);
 
-        secureLogger.debug(`[SocketServer] Received video-event: ${validEventType} in room: ${validRoomId}, playbackRate: ${validPlaybackRate}`);
-        
+        secureLogger.debug(`[Server] Received video-event: ${validEventType} in room: ${validRoomId}, playbackRate: ${validPlaybackRate}`);
+
         const room = await roomManager.getRoom(validRoomId);
         if (!room) {
-          secureLogger.debug(`[SocketServer] Room not found`);
+          secureLogger.debug(`[Server] Room not found`);
           socket.emit('error', 'Room not found');
           return;
         }
 
         // Check permissions - owners always have full control
         const isOwner = room.ownerId === validUserId;
-        secureLogger.debug(`[SocketServer] Is owner: ${isOwner}`);
-        
+        secureLogger.debug(`[Server] Is owner: ${isOwner}`);
+
         if (!isOwner) {
           if ((validEventType === 'play' || validEventType === 'pause') && !room.permissions.canPlay) {
             secureLogger.debug(`User denied ${validEventType} - no permission`);
@@ -175,7 +173,7 @@ app.prepare().then(() => {
         }
 
         const videoState = await roomManager.updateVideoState(validRoomId, validEventType, validCurrentTime, validPlaybackRate);
-        
+
         if (videoState) {
           io.to(validRoomId).emit('video-sync', videoState);
           secureLogger.roomAction(`Video ${validEventType} at ${validCurrentTime}s, rate ${validPlaybackRate}x`, validRoomId, validUserId);
@@ -192,15 +190,15 @@ app.prepare().then(() => {
         const validRoomId = validateRoomId(roomId);
         const validPermissions = validatePermissions(permissions);
 
-        secureLogger.debug('[SocketServer] Received permissions update for room:', validRoomId);
+        secureLogger.debug('[Server] Received permissions update for room:', validRoomId);
         const updatedRoom = await roomManager.updatePermissions(validRoomId, validPermissions);
-        
+
         if (updatedRoom) {
-          secureLogger.debug('[SocketServer] Broadcasting room-state to room');
+          secureLogger.debug('[Server] Broadcasting room-state to room');
           io.to(validRoomId).emit('room-state', updatedRoom);
           secureLogger.roomAction('Permissions updated', validRoomId);
         } else {
-          secureLogger.debug('[SocketServer] Failed to update permissions - room not found');
+          secureLogger.debug('[Server] Failed to update permissions - room not found');
         }
       } catch (error) {
         secureLogger.error('Error updating permissions:', error);
@@ -210,23 +208,23 @@ app.prepare().then(() => {
 
     socket.on('disconnect', async () => {
       secureLogger.info('Client disconnected:', socket.id);
-      
+
       // Handle unexpected disconnection
       const userRoom = userRoomMap.get(socket.id);
-      
+
       if (userRoom) {
         const { roomId, userId, username } = userRoom;
         try {
           secureLogger.debug(`Removing participant from room`);
           await roomManager.removeParticipant(roomId, userId);
           const updatedRoom = await roomManager.getRoom(roomId);
-          
+
           if (updatedRoom) {
             secureLogger.debug(`Broadcasting updated room state with ${updatedRoom.participants.length} participants`);
             // Broadcast updated room state to remaining participants
             io.to(roomId).emit('room-state', updatedRoom);
           }
-          
+
           userRoomMap.delete(socket.id);
           secureLogger.roomAction('User disconnected', roomId, userId);
         } catch (error) {
@@ -237,6 +235,6 @@ app.prepare().then(() => {
   });
 
   httpServer.listen(port, () => {
-    secureLogger.info(`> Socket server ready on http://${hostname}:${port}`);
+    secureLogger.info(`> Server ready on ${process.env.NEXT_PUBLIC_ORIGIN || `http://${hostname}:${port}`}`);
   });
 });

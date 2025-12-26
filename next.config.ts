@@ -3,7 +3,7 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingIncludes: {
-    '/': ['./socket-server.ts']
+    '/': ['./server.ts']
   },
   
   // Security Headers - Phase 3 Medium Severity Issue #11

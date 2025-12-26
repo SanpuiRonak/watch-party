@@ -96,5 +96,5 @@ redis-data/
 mongo-data/
 
 # Build artifacts
-socket-server.js
+server.js
 src/**/*.js

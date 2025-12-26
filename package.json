@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "predev": "docker-compose -f docker-compose.dev.yml up -d",
-    "dev": "tsx socket-server.ts",
+    "dev": "tsx server.ts",
     "postdev": "docker-compose -f docker-compose.dev.yml down",
     "mongo:start": "docker-compose -f docker-compose.dev.yml up -d mongodb",
     "mongo:stop": "docker-compose -f docker-compose.dev.yml down",
-    "build": "next build && npx tsc socket-server.ts --outDir . --target es2020 --module commonjs --esModuleInterop --allowSyntheticDefaultImports --skipLibCheck",
+    "build": "next build && npx tsc server.ts --outDir . --target es2020 --module commonjs --esModuleInterop --allowSyntheticDefaultImports --skipLibCheck",
     "build:docker": "docker build -t watch-party .",
     "start": "next start",
     "docker:build": "docker build -t watch-party .",

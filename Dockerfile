@@ -30,7 +30,8 @@ RUN adduser --system --uid 1001 nextjs
 # Copy built application
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/socket-server.js ./
+COPY --from=builder /app/public ./public
+COPY --from=builder /app/server.js ./
 COPY --from=builder /app/src ./src
 COPY --from=deps /app/node_modules ./node_modules
 
@@ -41,4 +42,4 @@ EXPOSE 3000
 ENV PORT 3000
 ENV HOSTNAME "0.0.0.0"
 
-CMD ["node", "socket-server.js"]
+CMD ["node", "server.js"]
