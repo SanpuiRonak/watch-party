@@ -18,18 +18,20 @@ import { logger } from "./logger";
 // Configuration
 // ============================================================================
 
-const SESSION_CONFIG = {
-    cookieName: "watch-party-session",
+function getSessionConfig() {
+    return {
+        cookieName: "watch-party-session",
 
-    // Cookie options
-    httpOnly: true, // Prevents JavaScript access (XSS protection)
-    secure: process.env.NODE_ENV === "production", // HTTPS only in production (Traefik handles this)
-    sameSite: "strict" as const, // CSRF protection
-    path: "/",
+        // Cookie options
+        httpOnly: true, // Prevents JavaScript access (XSS protection)
+        secure: process.env.NODE_ENV === "production", // HTTPS only in production (Traefik handles this)
+        sameSite: "strict" as const, // CSRF protection
+        path: "/",
 
-    // No maxAge - cookies persist as session cookies (cleared when browser closes)
-    // JWT tokens also don't expire - anonymous users can't re-authenticate
-} as const;
+        // No maxAge - cookies persist as session cookies (cleared when browser closes)
+        // JWT tokens also don't expire - anonymous users can't re-authenticate
+    } as const;
+}
 
 // ============================================================================
 // Session Creation
@@ -40,13 +42,14 @@ const SESSION_CONFIG = {
  */
 export async function createSession(userId: string, username: string): Promise<void> {
     const token = generateToken(userId, username);
+    const config = getSessionConfig();
 
     const cookieStore = await cookies();
-    cookieStore.set(SESSION_CONFIG.cookieName, token, {
-        httpOnly: SESSION_CONFIG.httpOnly,
-        secure: SESSION_CONFIG.secure,
-        sameSite: SESSION_CONFIG.sameSite,
-        path: SESSION_CONFIG.path,
+    cookieStore.set(config.cookieName, token, {
+        httpOnly: config.httpOnly,
+        secure: config.secure,
+        sameSite: config.sameSite,
+        path: config.path,
     });
 
     logger.authEvent("login", userId);
@@ -62,12 +65,13 @@ export function setSessionCookie(
     username: string,
 ): NextResponse {
     const token = generateToken(userId, username);
+    const config = getSessionConfig();
 
-    response.cookies.set(SESSION_CONFIG.cookieName, token, {
-        httpOnly: SESSION_CONFIG.httpOnly,
-        secure: SESSION_CONFIG.secure,
-        sameSite: SESSION_CONFIG.sameSite,
-        path: SESSION_CONFIG.path,
+    response.cookies.set(config.cookieName, token, {
+        httpOnly: config.httpOnly,
+        secure: config.secure,
+        sameSite: config.sameSite,
+        path: config.path,
     });
 
     logger.authEvent("login", userId);
@@ -86,7 +90,8 @@ export function setSessionCookie(
 export async function getSession(): Promise<JWTPayload | null> {
     try {
         const cookieStore = await cookies();
-        const sessionCookie = cookieStore.get(SESSION_CONFIG.cookieName);
+        const config = getSessionConfig();
+        const sessionCookie = cookieStore.get(config.cookieName);
 
         if (!sessionCookie) {
             return null;
@@ -106,7 +111,8 @@ export async function getSession(): Promise<JWTPayload | null> {
  */
 export function getSessionFromRequest(request: NextRequest): JWTPayload | null {
     try {
-        const sessionCookie = request.cookies.get(SESSION_CONFIG.cookieName);
+        const config = getSessionConfig();
+        const sessionCookie = request.cookies.get(config.cookieName);
 
         if (!sessionCookie) {
             return null;
@@ -157,7 +163,8 @@ export function requireSessionFromRequest(request: NextRequest): JWTPayload {
  */
 export async function destroySession(userId?: string): Promise<void> {
     const cookieStore = await cookies();
-    cookieStore.delete(SESSION_CONFIG.cookieName);
+    const config = getSessionConfig();
+    cookieStore.delete(config.cookieName);
 
     if (userId) {
         logger.authEvent("logout", userId);
@@ -168,7 +175,8 @@ export async function destroySession(userId?: string): Promise<void> {
  * Destroys session in a NextResponse
  */
 export function destroySessionCookie(response: NextResponse): NextResponse {
-    response.cookies.delete(SESSION_CONFIG.cookieName);
+    const config = getSessionConfig();
+    response.cookies.delete(config.cookieName);
     return response;
 }
 
@@ -268,12 +276,12 @@ export async function getCurrentUsername(): Promise<string | null> {
 export function shouldMigrateFromLocalStorage(): boolean {
     // This function is meant to be used client-side
     // Server-side always returns false
-    if (typeof window === "undefined") {
+    if (typeof globalThis.window === "undefined") {
         return false;
     }
 
     try {
-        const oldUser = localStorage.getItem("watch-party-user");
+        const oldUser = globalThis.window.localStorage.getItem("watch-party-user");
         return oldUser !== null;
     } catch {
         return false;
@@ -284,12 +292,12 @@ export function shouldMigrateFromLocalStorage(): boolean {
  * Clears old localStorage data after migration
  */
 export function clearOldLocalStorageSession(): void {
-    if (typeof window === "undefined") {
+    if (typeof globalThis.window === "undefined") {
         return;
     }
 
     try {
-        localStorage.removeItem("watch-party-user");
+        globalThis.window.localStorage.removeItem("watch-party-user");
         logger.info("Cleared old localStorage session");
     } catch (error) {
         logger.warn("Failed to clear old localStorage session", error);

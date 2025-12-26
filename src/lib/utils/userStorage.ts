@@ -9,14 +9,32 @@ export const saveUser = (user: User): void => {
 export const loadUser = (): User | null => {
     try {
         const stored = localStorage.getItem(USER_STORAGE_KEY);
-        return stored ? JSON.parse(stored) : null;
+        if (!stored) return null;
+
+        const parsed = JSON.parse(stored);
+
+        // Validate that the parsed object has required User fields
+        if (
+            typeof parsed === "object" &&
+            parsed !== null &&
+            typeof parsed.id === "string" &&
+            typeof parsed.username === "string"
+        ) {
+            return parsed as User;
+        }
+
+        return null;
     } catch {
         return null;
     }
 };
 
 export const clearUser = (): void => {
-    localStorage.removeItem(USER_STORAGE_KEY);
+    try {
+        localStorage.removeItem(USER_STORAGE_KEY);
+    } catch {
+        // Silently ignore localStorage errors
+    }
 };
 
 export const generateUsername = (): string => {

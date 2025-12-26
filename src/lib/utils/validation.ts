@@ -7,6 +7,7 @@ const BLACKLISTED_HOSTS = [
     "0.0.0.0",
     "169.254.169.254", // AWS metadata endpoint
     "::1", // IPv6 localhost
+    "[::1]", // IPv6 localhost with brackets
     "metadata.google.internal", // GCP metadata
     "169.254.169.254", // Azure metadata
 ];

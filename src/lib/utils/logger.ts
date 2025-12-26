@@ -25,25 +25,27 @@ export enum LogLevel {
 // Configuration
 // ============================================================================
 
-const LOG_CONFIG = {
-    // Set log level based on environment
-    currentLevel: process.env.NODE_ENV === "production" ? LogLevel.INFO : LogLevel.DEBUG,
+function getLogConfig() {
+    return {
+        // Set log level based on environment
+        currentLevel: process.env.NODE_ENV === "production" ? LogLevel.INFO : LogLevel.DEBUG,
 
-    // Enable/disable timestamps
-    includeTimestamp: true,
+        // Enable/disable timestamps
+        includeTimestamp: true,
 
-    // Enable/disable sensitive data redaction
-    redactSensitiveData: process.env.NODE_ENV === "production",
+        // Enable/disable sensitive data redaction
+        redactSensitiveData: process.env.NODE_ENV === "production",
 
-    // Colors for console output (development only)
-    colors: {
-        debug: "\x1b[36m", // Cyan
-        info: "\x1b[32m", // Green
-        warn: "\x1b[33m", // Yellow
-        error: "\x1b[31m", // Red
-        reset: "\x1b[0m", // Reset
-    },
-} as const;
+        // Colors for console output (development only)
+        colors: {
+            debug: "\x1b[36m", // Cyan
+            info: "\x1b[32m", // Green
+            warn: "\x1b[33m", // Yellow
+            error: "\x1b[31m", // Red
+            reset: "\x1b[0m", // Reset
+        },
+    } as const;
+}
 
 // ============================================================================
 // Sensitive Data Redaction
@@ -73,7 +75,8 @@ const SENSITIVE_PATTERNS = {
  * Redacts sensitive data from a string
  */
 function redactSensitiveData(text: string): string {
-    if (!LOG_CONFIG.redactSensitiveData) {
+    const config = getLogConfig();
+    if (!config.redactSensitiveData) {
         return text;
     }
 
@@ -155,7 +158,8 @@ function sanitizeForLogging(obj: unknown, depth = 0, maxDepth = 5): unknown {
  * Formats a log message with timestamp and level
  */
 function formatLogMessage(level: string, message: string): string {
-    const timestamp = LOG_CONFIG.includeTimestamp ? new Date().toISOString() : "";
+    const config = getLogConfig();
+    const timestamp = config.includeTimestamp ? new Date().toISOString() : "";
 
     const parts = [timestamp, `[${level}]`, message].filter(Boolean);
 
@@ -193,7 +197,8 @@ function argsToString(args: unknown[]): string {
 
 class Logger {
     private shouldLog(level: LogLevel): boolean {
-        return level >= LOG_CONFIG.currentLevel;
+        const config = getLogConfig();
+        return level >= config.currentLevel;
     }
 
     private colorize(text: string, level: string): string {
@@ -201,8 +206,9 @@ class Logger {
             return text;
         }
 
-        const color = LOG_CONFIG.colors[level as keyof typeof LOG_CONFIG.colors] || "";
-        const reset = LOG_CONFIG.colors.reset;
+        const config = getLogConfig();
+        const color = config.colors[level as keyof typeof config.colors] || "";
+        const reset = config.colors.reset;
         return `${color}${text}${reset}`;
     }
 
